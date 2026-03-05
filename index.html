@@ -1,459 +1,538 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Language" content="en">
-    <meta name="language" content="English">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
-    <title>XSSNow - Ultimate XSS Payload Arsenal & Security Research Platform</title>
-    <meta name="description" content="Community-driven XSS vulnerability testing platform with curated payloads, advanced generator, WAF bypass techniques, and security research tools. Perfect for penetration testing and bug bounty hunting.">
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader — Web Security Research Platform</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    html, body { height: 100%; overflow: hidden; }
 
-    <!-- Open Graph Meta Tags -->
-    <meta property="og:title" content="XSSNow - Ultimate XSS Payload Arsenal">
-    <meta property="og:description" content="Community-driven XSS vulnerability testing platform with curated payloads, advanced generator, and WAF bypass techniques for security research.">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://xssnow.in">
-    <meta property="og:image" content="https://xssnow.in/assets/xss_now_logo.png">
-    <meta property="og:site_name" content="XSSNow">
+    .splash {
+      height: calc(100vh - 64px);
+      margin-top: 64px;
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      align-items: center;
+      gap: 60px;
+      max-width: 1320px;
+      margin-left: auto;
+      margin-right: auto;
+      padding: 0 40px;
+      position: relative;
+    }
 
-    <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="XSSNow - Ultimate XSS Payload Arsenal">
-    <meta name="twitter:description" content="Community-driven XSS vulnerability testing platform with curated payloads and WAF bypass techniques.">
-    <meta name="twitter:image" content="https://xssnow.in/assets/xss_now_logo.png">
+    /* Red glow */
+    .splash-glow {
+      position: fixed; pointer-events: none; z-index: 0;
+      width: 700px; height: 500px;
+      top: 10%; right: -100px;
+      background: radial-gradient(ellipse, rgba(255,26,60,0.12) 0%, transparent 70%);
+    }
+    .splash-purple-glow {
+      position: fixed; pointer-events: none; z-index: 0;
+      width: 600px; height: 600px;
+      bottom: -150px; left: -100px;
+      background: radial-gradient(ellipse, rgba(192,0,255,0.08) 0%, transparent 70%);
+    }
 
-    <!-- Additional SEO Meta Tags -->
-    <meta name="keywords" content="XSS, Cross-Site Scripting, Security Testing, Penetration Testing, Bug Bounty, WAF Bypass, Security Research, Ethical Hacking">
-    <meta name="author" content="Sid Joshi (dr34mhacks)">
-    <meta name="robots" content="index, follow">
-    <meta name="googlebot" content="index, follow">
-    <link rel="canonical" href="https://xssnow.in">
+    .splash-left { position: relative; z-index: 1; }
+    .splash-right { position: relative; z-index: 1; }
 
-    <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="assets/ninja.svg">
+    .splash-eyebrow {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.75rem; font-weight: 700; letter-spacing: 0.18em;
+      text-transform: uppercase; color: var(--purple);
+      text-shadow: var(--purple-text-glow); margin-bottom: 20px;
+    }
+    .splash-eyebrow .dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--purple); box-shadow: 0 0 6px var(--purple);
+      animation: pulse 2s infinite;
+    }
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    .splash-title {
+      font-size: clamp(2.4rem, 4vw, 3.6rem);
+      font-weight: 900; line-height: 1.1; letter-spacing: -0.03em;
+      color: var(--white); margin: 0 0 20px;
+    }
+    .splash-title .accent-purple {
+      color: var(--purple); text-shadow: var(--purple-text-glow);
+    }
 
-    <!-- Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    .splash-desc {
+      font-size: 1rem; color: var(--text2); line-height: 1.7;
+      max-width: 560px; margin-bottom: 32px;
+    }
 
-    <!-- Manifest for PWA -->
-    <link rel="manifest" href="/manifest.json">
+    .splash-search {
+      display: flex; align-items: center; gap: 0;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); overflow: hidden;
+      margin-bottom: 20px; transition: border-color 0.2s;
+      max-width: 560px;
+    }
+    .splash-search:focus-within {
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(192,0,255,0.12);
+    }
+    .splash-search-icon {
+      padding: 0 12px 0 16px; font-size: 1rem; color: var(--text3); pointer-events: none;
+    }
+    .splash-search-input {
+      flex: 1; background: none; border: none; outline: none;
+      padding: 14px 4px; font-size: 0.95rem; color: var(--white);
+      font-family: var(--sans); min-width: 0;
+    }
+    .splash-search-input::placeholder { color: var(--text3); }
+    .splash-search-btn {
+      padding: 0 24px; align-self: stretch; background: var(--purple);
+      border: none; color: var(--white); font-weight: 700;
+      font-size: 0.85rem; cursor: pointer; transition: background 0.18s;
+      font-family: var(--sans); white-space: nowrap; border-radius: 0;
+    }
+    .splash-search-btn:hover { background: #a800d4; }
 
-    <!-- Performance hints -->
-    <link rel="dns-prefetch" href="//github.com">
-    <link rel="dns-prefetch" href="//cdnjs.cloudflare.com">
+    .splash-actions {
+      display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 40px;
+    }
 
-    <!-- Critical CSS (inline for performance) -->
-    <style>
-        body{margin:0;padding:0;background:#0a0a0a;color:#fff;font-family:Inter,sans-serif;overflow-x:hidden}
-        .navbar{position:fixed;top:0;width:100%;background:rgba(17,17,17,.95);backdrop-filter:blur(10px);z-index:1000;height:80px}
-        .hero-section{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center}
-        .loading{position:fixed;inset:0;background:#0a0a0a;display:flex;align-items:center;justify-content:center;z-index:9999}
-    </style>
+    .splash-stats {
+      display: flex; gap: 32px;
+      border-top: 1px solid var(--border); padding-top: 28px;
+    }
+    .splash-stat-n {
+      display: block; font-size: 1.6rem; font-weight: 900;
+      color: var(--purple); text-shadow: var(--purple-text-glow);
+      font-family: var(--mono); letter-spacing: -0.02em;
+    }
+    .splash-stat-l {
+      display: block; font-size: 0.72rem; font-weight: 600;
+      color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em;
+      margin-top: 2px;
+    }
 
-    <!-- Styles -->
-    <link rel="stylesheet" href="css/styles.css">
-    <link rel="stylesheet" href="css/animations.css">
-    <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/mobile-enhancements.css">
-    <link rel="stylesheet" href="css/icon-fixes.css">
-    <link rel="stylesheet" href="css/seo-components.css">
+    /* Right: quick-access module panel */
+    .qa-panel {
+      background: var(--card-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: 0 0 40px rgba(192,0,255,0.05);
+    }
+    .qa-title {
+      font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.16em; color: var(--text3); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .qa-title::before {
+      content: ''; width: 18px; height: 2px;
+      background: linear-gradient(90deg, var(--purple), transparent);
+    }
+    .qa-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    }
+    .qa-card {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 5px; padding: 10px 6px; border-radius: 8px;
+      background: var(--bg3); border: 1px solid var(--border);
+      text-decoration: none; transition: all var(--trans);
+      cursor: pointer;
+    }
+    .qa-card:hover {
+      border-color: var(--purple); background: var(--purple-dim);
+      box-shadow: 0 0 12px rgba(192,0,255,0.15);
+      transform: translateY(-2px);
+    }
+    .qa-card .qa-icon { font-size: 1.2rem; line-height: 1; }
+    .qa-card .qa-label {
+      font-size: 0.62rem; font-weight: 700; color: var(--text2);
+      font-family: var(--mono); text-align: center; line-height: 1.2;
+    }
+    .qa-card:hover .qa-label { color: var(--purple); }
+
+    .qa-card--gen {
+      grid-column: span 2;
+      flex-direction: row; gap: 8px; padding: 10px 14px;
+      background: var(--purple-dim); border-color: rgba(192,0,255,0.25);
+    }
+    .qa-card--gen .qa-label { color: var(--purple); font-size: 0.7rem; }
+    .qa-card--gen:hover { background: rgba(192,0,255,0.2); }
+
+    .qa-divider { grid-column: span 4; height: 1px; background: var(--border); margin: 2px 0; }
+
+    @media (max-width: 900px) {
+      .splash { grid-template-columns: 1fr; padding: 20px; gap: 32px; }
+      .splash-right { display: none; }
+      html, body { overflow: auto; }
+    }
+  </style>
 </head>
 <body>
-    <!-- Matrix Background Animation -->
-    <div id="matrix-bg"></div>
 
-    <main id="main-content">
-
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <a href="index.html" style="display: flex; align-items: center; gap: 0.5rem; text-decoration: none; color: var(--neon-green);">
-                    <i class="fas fa-user-ninja" style="color: var(--neon-green);"></i>
-                    <span class="brand-text" style="color: var(--neon-green);">XSSNow</span>
-                    <span class="version">v1.0</span>
-                </a>
-            </div>
-
-            <button class="mobile-menu-toggle" aria-label="Toggle mobile menu">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
-
-            <div class="nav-menu">
-                <a href="index.html" class="nav-link active">Home</a>
-                <a href="payloads.html" class="nav-link">Payloads</a>
-                <a href="xss-payload-generator.html" class="nav-link">Generator</a>
-                <a href="contributors.html" class="nav-link">Contributors</a>
-                <a href="docs.html" class="nav-link">Docs</a>
-            </div>
-
-            <div class="nav-actions">
-                <a href="https://github.com/dr34mhacks/xssnow" class="github-btn" target="_blank">
-                    <i class="fab fa-github"></i>
-                    <span>Fork & Contribute</span>
-                </a>
-            </div>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link active">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
         </div>
-    </nav>
+        <a href="generator.html"  class="nav-link">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link">XSS Lab</a>
+        <a href="encoder.html"    class="nav-link">Encoder</a>
+      </div>
+      <div class="nav-actions">
+        <a href="modules.html"  class="btn-nav btn-nav-ghost">All Attacks</a>
+        <a href="lab.html"      class="btn-nav btn-nav-primary">XSS Lab</a>
+      </div>
+    </div>
+  </nav>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-container">
-            <div class="hero-content">
-                <div class="hero-badge">
-                    <span class="badge-icon">🔥</span>
-                    <span>Most Comprehensive XSS Arsenal</span>
-                </div>
+  <div class="splash">
+    <div class="splash-glow"></div>
+    <div class="splash-purple-glow"></div>
 
-                <h1 class="hero-title">
-                    <span class="gradient-text">XSSNow</span>
-                    <br>The Ultimate XSS Payload Database
-                </h1>
+    <!-- LEFT: Hero content -->
+    <div class="splash-left">
+      <div class="splash-eyebrow">
+        <span class="dot"></span> Web Security Research Platform
+      </div>
 
-                <p class="hero-description">
-                    One-stop solution for security researchers, penetration testers, and bug bounty hunters.
-                    Featuring <span id="homepagePayloadCount">900+</span> curated payloads, advanced bypass techniques, and real-time payload generation.
-                </p>
+      <h1 class="splash-title">
+        The Web Attack<br><span class="accent-purple">Payload Vault</span>
+      </h1>
 
-                <div class="hero-stats">
-                    <div class="stat-item">
-                        <div class="stat-number" id="heroPayloadCount">900+</div>
-                        <div class="stat-label">XSS Payloads</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">15+</div>
-                        <div class="stat-label">Attack Contexts</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">25+</div>
-                        <div class="stat-label">WAF Bypasses</div>
-                    </div>
-                    <div class="stat-item">
-                        <div class="stat-number">24/7</div>
-                        <div class="stat-label">Research Lab</div>
-                    </div>
-                </div>
+      <p class="splash-desc">
+        22 attack modules, 500+ curated payloads, an XSS lab, and two payload generators —
+        built for authorized security testing, CTF competitions, and bug bounty research.
+      </p>
 
-                <div class="hero-actions">
-                    <button class="btn btn-primary" onclick="window.location.href='payloads.html'">
-                        <i class="fas fa-rocket"></i>
-                        Explore Payloads
-                    </button>
-                    <button class="btn btn-secondary" onclick="window.location.href='xss-payload-generator.html'">
-                        <i class="fas fa-wand-magic-sparkles"></i>
-                        Generate Payload
-                    </button>
-                </div>
-            </div>
+      <form class="splash-search" action="search.html" method="get" autocomplete="off">
+        <span class="splash-search-icon">🔍</span>
+        <input type="text" name="q" class="splash-search-input" placeholder="Search payloads, techniques, vulnerabilities...">
+        <button type="submit" class="splash-search-btn">Search</button>
+      </form>
 
-            <div class="hero-visual">
-                <div class="terminal-window">
-                    <div class="terminal-header">
-                        <div class="terminal-controls">
-                            <span class="control close"></span>
-                            <span class="control minimize"></span>
-                            <span class="control maximize"></span>
-                        </div>
-                        <div class="terminal-title">ninja@xssnow:~$</div>
-                    </div>
-                    <div class="terminal-body">
-                        <div class="terminal-line">
-                            <span class="prompt">ninja@xssnow:~$</span>
-                            <span class="command" id="typewriter"></span>
-                            <span class="cursor">|</span>
-                        </div>
-                        <div id="terminal-output"></div>
-                    </div>
-                </div>
-            </div>
+      <div class="splash-actions">
+        <a href="modules.html"    class="btn btn-primary btn-lg">Browse Attacks</a>
+        <a href="attack-gen.html" class="btn btn-secondary btn-lg">Attack Gen</a>
+        <a href="lab.html"        class="btn btn-secondary btn-lg">XSS Lab</a>
+        <button id="owasp-btn"   class="btn btn-secondary btn-lg">OWASP Top 10</button>
+      </div>
+
+      <div class="splash-stats">
+        <div>
+          <span class="splash-stat-n">22</span>
+          <span class="splash-stat-l">Modules</span>
         </div>
-    </section>
-
-
-    <!-- Bug Bounty Success Stories -->
-    <section class="bounty-stories">
-        <div class="container">
-            <div class="section-header">
-                <h2 class="section-title">
-                    <span class="gradient-text">💰 Bug Bounty Success Stories</span>
-                </h2>
-                <p class="section-subtitle">Understanding the impact and value of XSS research in bug bounty programs</p>
-            </div>
-
-            <div class="stories-zigzag">
-                <div class="story-item left">
-                    <div class="story-content">
-                        <div class="story-badge">🏆 Critical Impact</div>
-                        <h3>Social Media Platform XSS</h3>
-                        <p>Researchers have discovered DOM-based XSS vulnerabilities in major social platforms that could affect millions of users, enabling account takeovers through malicious links.</p>
-                        <div class="story-stats">
-                            <span class="bounty-amount">$5k-$25k</span>
-                            <span class="researcher">Typical Range</span>
-                        </div>
-                    </div>
-                    <div class="story-visual">
-                        <div class="bounty-card facebook">
-                            <div class="card-header">
-                                <i class="fas fa-share-alt"></i>
-                                <span>Social Platforms</span>
-                            </div>
-                            <div class="card-amount">$15,000</div>
-                            <div class="card-type">DOM XSS</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="story-item right">
-                    <div class="story-visual">
-                        <div class="bounty-card google">
-                            <div class="card-header">
-                                <i class="fab fa-chrome"></i>
-                                <span>Browser Security</span>
-                            </div>
-                            <div class="card-amount">$30,000</div>
-                            <div class="card-type">Universal XSS</div>
-                        </div>
-                    </div>
-                    <div class="story-content">
-                        <div class="story-badge">🔥 Browser Security</div>
-                        <h3>Browser Universal XSS</h3>
-                        <p>Universal XSS vulnerabilities in browser engines represent some of the highest-impact discoveries, affecting any website visited by users and earning substantial rewards.</p>
-                        <div class="story-stats">
-                            <span class="bounty-amount">$10k-$50k</span>
-                            <span class="researcher">High Impact</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="story-item left">
-                    <div class="story-content">
-                        <div class="story-badge">⚡ Payment Security</div>
-                        <h3>Financial Platform XSS</h3>
-                        <p>XSS vulnerabilities in financial platforms are particularly valuable due to their potential for account takeover and access to sensitive financial data.</p>
-                        <div class="story-stats">
-                            <span class="bounty-amount">$8k-$20k</span>
-                            <span class="researcher">Financial Sector</span>
-                        </div>
-                    </div>
-                    <div class="story-visual">
-                        <div class="bounty-card paypal">
-                            <div class="card-header">
-                                <i class="fas fa-credit-card"></i>
-                                <span>Financial Platforms</span>
-                            </div>
-                            <div class="card-amount">$12,000</div>
-                            <div class="card-type">Stored XSS</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="story-item right">
-                    <div class="story-visual">
-                        <div class="bounty-card microsoft">
-                            <div class="card-header">
-                                <i class="fas fa-shield-alt"></i>
-                                <span>Enterprise Security</span>
-                            </div>
-                            <div class="card-amount">$18,000</div>
-                            <div class="card-type">CSP Bypass</div>
-                        </div>
-                    </div>
-                    <div class="story-content">
-                        <div class="story-badge">🛡️ Enterprise Impact</div>
-                        <h3>Enterprise CSP Bypasses</h3>
-                        <p>Content Security Policy bypasses in enterprise environments represent sophisticated attack vectors that can compromise strict security implementations.</p>
-                        <div class="story-stats">
-                            <span class="bounty-amount">$5k-$25k</span>
-                            <span class="researcher">Enterprise Focus</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bounty-stats">
-                <div class="stat-highlight">
-                    <div class="stat-number" id="statsPayloadCount">900+</div>
-                    <div class="stat-label">XSS Payloads</div>
-                    <div class="stat-desc">in our database</div>
-                </div>
-                <div class="stat-highlight">
-                    <div class="stat-number">$1K-$50K</div>
-                    <div class="stat-label">Typical XSS Bounties</div>
-                    <div class="stat-desc">reward ranges</div>
-                </div>
-                <div class="stat-highlight">
-                    <div class="stat-number">15+</div>
-                    <div class="stat-label">Attack Contexts</div>
-                    <div class="stat-desc">covered by payloads</div>
-                </div>
-            </div>
+        <div>
+          <span class="splash-stat-n">500+</span>
+          <span class="splash-stat-l">Payloads</span>
         </div>
-    </section>
-
-
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h3>🥷 XSSNow</h3>
-                    <p style="color: var(--text-secondary) !important;">The most comprehensive XSS payload database for ethical security research and education.</p>
-                    <div class="github-star">
-                        <a href="https://github.com/dr34mhacks/xssnow" target="_blank" class="star-btn" style="color: var(--text-primary) !important; text-decoration: none !important;">
-                            <i class="fas fa-star"></i> Leave us a star
-                        </a>
-                    </div>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Resources</h4>
-                    <ul>
-                        <li><a href="payloads.html">XSS Payloads</a></li>
-                        <li><a href="xss-payload-generator.html">Payload Generator</a></li>
-                        <li><a href="docs.html">Documentation</a></li>
-                        <li><a href="contributors.html">Contributors</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Docs</h4>
-                    <ul>
-                        <li><a href="docs.html#fundamentals">XSS Fundamentals</a></li>
-                        <li><a href="docs.html#bypass-techniques">Bypass Techniques</a></li>
-                        <li><a href="docs.html#waf-bypasses">WAF Bypasses</a></li>
-                        <li><a href="docs.html#prevention">Prevention Guide</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Contribute</h4>
-                    <ul>
-                        <li><a href="https://github.com/dr34mhacks/xssnow" target="_blank">GitHub Repository</a></li>
-                        <li><a href="https://github.com/dr34mhacks/xssnow/issues" target="_blank">Report Issues</a></li>
-                        <li><a href="https://github.com/dr34mhacks/xssnow/blob/main/CONTRIBUTING.md" target="_blank">Add Payloads</a></li>
-                        <li><a href="contributors.html">Join Community</a></li>
-                    </ul>
-                </div>
-            </div>
-
-            <div class="footer-bottom">
-                <div class="footer-text">
-                    <p>&copy; 2026 XSSNow. Built with ❤️ by <a href="https://github.com/dr34mhacks/" target="_blank" style="color: var(--neon-green); text-decoration: none;">Sid Joshi (dr34mhacks)</a> </p>
-                    <p class="disclaimer">⚠️ For educational and ethical security testing only. Use responsibly.</p>
-                </div>
-            </div>
+        <div>
+          <span class="splash-stat-n">2</span>
+          <span class="splash-stat-l">Generators</span>
         </div>
-    </footer>
-    </main>
+        <div>
+          <span class="splash-stat-n">4</span>
+          <span class="splash-stat-l">Lab Contexts</span>
+        </div>
+      </div>
+    </div>
 
-    <!-- Scripts -->
-    <script src="js/seo-framework.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/mobile-navigation.js"></script>
-    <script src="js/animations.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js" defer></script>
-    <script src="js/generator.js" defer></script>
+    <!-- RIGHT: Quick access -->
+    <div class="splash-right">
+      <div class="qa-panel">
+        <div class="qa-title">Quick Access</div>
+        <div class="qa-grid">
 
-    <!-- Mobile Menu Toggle -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const mobileToggle = document.querySelector('.mobile-menu-toggle');
-            const navMenu = document.querySelector('.nav-menu');
+          <a href="payloads.html" class="qa-card">
+            <span class="qa-icon">⚡</span>
+            <span class="qa-label">XSS</span>
+          </a>
+          <a href="module.html?src=data/sqli.json&name=SQL+Injection" class="qa-card">
+            <span class="qa-icon">🗄️</span>
+            <span class="qa-label">SQLi</span>
+          </a>
+          <a href="module.html?src=data/cmdi.json&name=Command+Injection" class="qa-card">
+            <span class="qa-icon">💻</span>
+            <span class="qa-label">CMDi</span>
+          </a>
+          <a href="module.html?src=data/ssti.json&name=SSTI" class="qa-card">
+            <span class="qa-icon">🧱</span>
+            <span class="qa-label">SSTI</span>
+          </a>
 
-            if (mobileToggle && navMenu) {
-                mobileToggle.addEventListener('click', function() {
-                    mobileToggle.classList.toggle('active');
-                    navMenu.classList.toggle('active');
-                });
+          <a href="module.html?src=data/traversal.json&name=Path+Traversal" class="qa-card">
+            <span class="qa-icon">📁</span>
+            <span class="qa-label">Traversal</span>
+          </a>
+          <a href="module.html?src=data/xxe.json&name=XXE" class="qa-card">
+            <span class="qa-icon">🗃️</span>
+            <span class="qa-label">XXE</span>
+          </a>
+          <a href="module.html?src=data/ssrf.json&name=SSRF" class="qa-card">
+            <span class="qa-icon">🌐</span>
+            <span class="qa-label">SSRF</span>
+          </a>
+          <a href="module.html?src=data/revshells.json&name=Reverse+Shells" class="qa-card">
+            <span class="qa-icon">🐚</span>
+            <span class="qa-label">RevShells</span>
+          </a>
 
-                // Close mobile menu when clicking nav links
-                navMenu.querySelectorAll('.nav-link').forEach(link => {
-                    link.addEventListener('click', function() {
-                        mobileToggle.classList.remove('active');
-                        navMenu.classList.remove('active');
-                    });
-                });
+          <a href="module.html?src=data/jwt.json&name=JWT+Attacks" class="qa-card">
+            <span class="qa-icon">🔑</span>
+            <span class="qa-label">JWT</span>
+          </a>
+          <a href="module.html?src=data/csrf.json&name=CSRF" class="qa-card">
+            <span class="qa-icon">🎭</span>
+            <span class="qa-label">CSRF</span>
+          </a>
+          <a href="module.html?src=data/php.json&name=PHP+Attacks" class="qa-card">
+            <span class="qa-icon">🐘</span>
+            <span class="qa-label">PHP</span>
+          </a>
+          <a href="module.html?src=data/proto.json&name=Prototype+Pollution" class="qa-card">
+            <span class="qa-icon">⚙️</span>
+            <span class="qa-label">Prototype</span>
+          </a>
 
-                // Close mobile menu when clicking outside
-                document.addEventListener('click', function(event) {
-                    if (!mobileToggle.contains(event.target) && !navMenu.contains(event.target)) {
-                        mobileToggle.classList.remove('active');
-                        navMenu.classList.remove('active');
-                    }
-                });
-            }
-        });
-    </script>
+          <div class="qa-divider"></div>
 
-    <!-- Performance and Analytics -->
-    <script>
-        // Service Worker registration
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js');
-            });
-        }
-    </script>
-    <script src="js/author.js?v=20260104111729"></script>
+          <a href="generator.html" class="qa-card--gen qa-card">
+            <span class="qa-icon">⚡</span>
+            <span class="qa-label">XSS Generator</span>
+          </a>
+          <a href="attack-gen.html" class="qa-card--gen qa-card">
+            <span class="qa-icon">🎯</span>
+            <span class="qa-label">Attack Gen</span>
+          </a>
 
-    <!-- Dynamic payload count updater -->
-    <script>
-        async function updatePayloadCounts() {
-            try {
-                const response = await fetch('data/payloads.yaml?v=' + Date.now(), {
-                    cache: 'no-cache',
-                    headers: {
-                        'Cache-Control': 'no-cache'
-                    }
-                });
-                const yamlText = await response.text();
+          <a href="modules.html" class="qa-card" style="grid-column:span 2;flex-direction:row;gap:8px;padding:10px 14px;">
+            <span class="qa-icon">→</span>
+            <span class="qa-label" style="font-size:0.7rem;">All 22 Attacks</span>
+          </a>
 
-                // Count payload entries
-                const payloadMatches = yamlText.match(/^  - code:/gm);
-                const totalCount = payloadMatches ? payloadMatches.length : 900;
+        </div>
+      </div>
+    </div>
 
-                // Update all payload count elements
-                const elements = [
-                    'homepagePayloadCount',
-                    'heroPayloadCount',
-                    'statsPayloadCount'
-                ];
+  </div>
 
-                elements.forEach(id => {
-                    const element = document.getElementById(id);
-                    if (element) {
-                        element.textContent = totalCount + '+';
-                    }
-                });
+  <!-- OWASP Top 10 Modal -->
+  <div id="owasp-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(5,5,12,0.92);backdrop-filter:blur(8px);overflow-y:auto;">
+    <div style="max-width:900px;margin:48px auto;padding:0 20px 60px;">
+      <div style="background:var(--card-solid);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 28px;border-bottom:1px solid var(--border);background:var(--bg3);">
+          <div>
+            <div style="font-size:0.63rem;font-weight:800;text-transform:uppercase;letter-spacing:0.16em;color:var(--text3);margin-bottom:4px;">OWASP</div>
+            <div style="font-size:1.3rem;font-weight:900;color:var(--white);">Top 10 — 2021 <span style="color:var(--purple);text-shadow:var(--purple-text-glow);">Mapped to Payloader</span></div>
+          </div>
+          <button id="owasp-close" style="background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);padding:6px 14px;cursor:pointer;font-size:0.9rem;transition:var(--trans);">✕ Close</button>
+        </div>
+        <!-- Grid -->
+        <div style="padding:24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px;" id="owasp-grid"></div>
+      </div>
+    </div>
+  </div>
 
-                console.log('Updated payload count to:', totalCount);
-            } catch (error) {
-                console.log('Could not fetch dynamic count, using fallback');
-                // Fallback to current count
-                const elements = ['homepagePayloadCount', 'heroPayloadCount', 'statsPayloadCount'];
-                elements.forEach(id => {
-                    const element = document.getElementById(id);
-                    if (element && element.textContent === '900+') {
-                        element.textContent = '904+';
-                    }
-                });
-            }
-        }
+  <script src="js/app.js"></script>
+  <script>
+    // Register service worker for offline support
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
 
-        // Update counts when page loads
-        document.addEventListener('DOMContentLoaded', updatePayloadCounts);
-    </script>
+    // Add PWA manifest link
+    const ml = document.createElement('link');
+    ml.rel = 'manifest'; ml.href = 'manifest.json';
+    document.head.appendChild(ml);
+
+    // OWASP Top 10 modal
+    const OWASP = [
+      {
+        id: 'A01', title: 'Broken Access Control',
+        color: '#ff1a3c', colorDim: 'rgba(255,26,60,0.12)',
+        desc: 'Restrictions on authenticated users are not properly enforced.',
+        modules: [
+          { label: 'IDOR', href: 'module.html?src=data/idor.json&name=IDOR', icon: '🔓' },
+          { label: 'Path Traversal', href: 'module.html?src=data/traversal.json&name=Path+Traversal', icon: '📁' },
+          { label: 'OAuth', href: 'module.html?src=data/oauth.json&name=OAuth+Attacks', icon: '🔐' },
+        ]
+      },
+      {
+        id: 'A02', title: 'Cryptographic Failures',
+        color: '#c000ff', colorDim: 'rgba(192,0,255,0.12)',
+        desc: 'Sensitive data exposed due to weak or missing cryptography.',
+        modules: [
+          { label: 'JWT Attacks', href: 'module.html?src=data/jwt.json&name=JWT+Attacks', icon: '🔑' },
+        ]
+      },
+      {
+        id: 'A03', title: 'Injection',
+        color: '#00ff88', colorDim: 'rgba(0,255,136,0.10)',
+        desc: 'Hostile data sent to an interpreter as part of a command or query.',
+        modules: [
+          { label: 'XSS',         href: 'payloads.html', icon: '⚡' },
+          { label: 'SQL Injection', href: 'module.html?src=data/sqli.json&name=SQL+Injection', icon: '🗄️' },
+          { label: 'CMDi',        href: 'module.html?src=data/cmdi.json&name=Command+Injection', icon: '💻' },
+          { label: 'SSTI',        href: 'module.html?src=data/ssti.json&name=SSTI', icon: '🧱' },
+          { label: 'NoSQL',       href: 'module.html?src=data/nosql.json&name=NoSQL+Injection', icon: '🍃' },
+          { label: 'XXE',         href: 'module.html?src=data/xxe.json&name=XXE', icon: '📄' },
+          { label: 'CRLF',        href: 'module.html?src=data/crlf.json&name=CRLF+Injection', icon: '↵' },
+        ]
+      },
+      {
+        id: 'A04', title: 'Insecure Design',
+        color: '#00ccff', colorDim: 'rgba(0,204,255,0.10)',
+        desc: 'Missing or ineffective control design — flaws in business logic.',
+        modules: [
+          { label: 'Race Conditions', href: 'module.html?src=data/racecond.json&name=Race+Condition+Attacks', icon: '⚡' },
+          { label: 'CSRF', href: 'module.html?src=data/csrf.json&name=CSRF', icon: '🔄' },
+        ]
+      },
+      {
+        id: 'A05', title: 'Security Misconfiguration',
+        color: '#ffaa00', colorDim: 'rgba(255,170,0,0.10)',
+        desc: 'Missing hardening, unnecessary features enabled, default credentials.',
+        modules: [
+          { label: 'XXE',          href: 'module.html?src=data/xxe.json&name=XXE', icon: '📄' },
+          { label: 'GraphQL',      href: 'module.html?src=data/graphql.json&name=GraphQL+Attacks', icon: '◉' },
+          { label: 'WebSockets',   href: 'module.html?src=data/websocket.json&name=WebSocket+Attacks', icon: '🔌' },
+          { label: 'PHP Attacks',  href: 'module.html?src=data/php.json&name=PHP+Attacks', icon: '🐘' },
+        ]
+      },
+      {
+        id: 'A06', title: 'Vulnerable & Outdated Components',
+        color: '#ff6600', colorDim: 'rgba(255,102,0,0.10)',
+        desc: 'Using components with known vulnerabilities.',
+        modules: [
+          { label: 'Deserialization', href: 'module.html?src=data/deserial.json&name=Deserialization', icon: '📦' },
+          { label: 'PHP Attacks',     href: 'module.html?src=data/php.json&name=PHP+Attacks', icon: '🐘' },
+        ]
+      },
+      {
+        id: 'A07', title: 'Identification & Auth Failures',
+        color: '#c000ff', colorDim: 'rgba(192,0,255,0.12)',
+        desc: 'Weaknesses in authentication, session management, credentials.',
+        modules: [
+          { label: 'JWT Attacks', href: 'module.html?src=data/jwt.json&name=JWT+Attacks', icon: '🔑' },
+          { label: 'OAuth',       href: 'module.html?src=data/oauth.json&name=OAuth+Attacks', icon: '🔐' },
+          { label: 'CSRF',        href: 'module.html?src=data/csrf.json&name=CSRF', icon: '🔄' },
+        ]
+      },
+      {
+        id: 'A08', title: 'Software & Data Integrity Failures',
+        color: '#00ff88', colorDim: 'rgba(0,255,136,0.10)',
+        desc: 'Code and infrastructure lacking integrity verification.',
+        modules: [
+          { label: 'Deserialization',    href: 'module.html?src=data/deserial.json&name=Deserialization', icon: '📦' },
+          { label: 'Prototype Pollution', href: 'module.html?src=data/proto.json&name=Prototype+Pollution', icon: '☣️' },
+        ]
+      },
+      {
+        id: 'A09', title: 'Security Logging & Monitoring Failures',
+        color: '#888888', colorDim: 'rgba(136,136,136,0.10)',
+        desc: 'Insufficient logging, detection, and response to breaches.',
+        modules: [
+          { label: 'CRLF (Log Injection)', href: 'module.html?src=data/crlf.json&name=CRLF+Injection', icon: '↵' },
+        ]
+      },
+      {
+        id: 'A10', title: 'Server-Side Request Forgery',
+        color: '#00ccff', colorDim: 'rgba(0,204,255,0.10)',
+        desc: 'Fetch a remote resource using user-supplied URL without validation.',
+        modules: [
+          { label: 'SSRF',       href: 'module.html?src=data/ssrf.json&name=SSRF', icon: '🌐' },
+          { label: 'XXE',        href: 'module.html?src=data/xxe.json&name=XXE', icon: '📄' },
+          { label: 'WebSockets', href: 'module.html?src=data/websocket.json&name=WebSocket+Attacks', icon: '🔌' },
+          { label: 'GraphQL',    href: 'module.html?src=data/graphql.json&name=GraphQL+Attacks', icon: '◉' },
+        ]
+      },
+    ];
+
+    const owaspGrid = document.getElementById('owasp-grid');
+    owaspGrid.innerHTML = OWASP.map(cat => `
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;border-left:3px solid ${cat.color};">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <span style="font-family:var(--mono);font-size:0.7rem;font-weight:800;padding:3px 8px;border-radius:4px;background:${cat.colorDim};color:${cat.color};border:1px solid ${cat.color}33;">${cat.id}</span>
+          <span style="font-size:0.85rem;font-weight:700;color:var(--white);">${cat.title}</span>
+        </div>
+        <div style="font-size:0.78rem;color:var(--text3);margin-bottom:10px;line-height:1.5;">${cat.desc}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${cat.modules.map(m => `<a href="${m.href}" style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);font-size:0.72rem;font-family:var(--mono);color:var(--text2);text-decoration:none;transition:var(--trans);" onmouseover="this.style.borderColor='${cat.color}';this.style.color='${cat.color}'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text2)'">${m.icon} ${m.label}</a>`).join('')}
+        </div>
+      </div>`).join('');
+
+    document.getElementById('owasp-btn').addEventListener('click', () => {
+      document.getElementById('owasp-modal').style.display = 'block';
+      document.body.style.overflow = 'auto';
+    });
+    document.getElementById('owasp-close').addEventListener('click', () => {
+      document.getElementById('owasp-modal').style.display = 'none';
+      document.body.style.overflow = 'hidden';
+    });
+    document.getElementById('owasp-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('owasp-modal')) {
+        document.getElementById('owasp-modal').style.display = 'none';
+        document.body.style.overflow = 'hidden';
+      }
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && document.getElementById('owasp-modal').style.display !== 'none') {
+        document.getElementById('owasp-modal').style.display = 'none';
+        document.body.style.overflow = 'hidden';
+      }
+    });
+
+    // Live payload counts on quick-access cards
+    const QA_COUNTS = [
+      { href: 'payloads.html',       label: 'XSS',       src: 'data/payloads.json' },
+      { href: 'data/sqli.json',      label: 'SQLi',      src: 'data/sqli.json' },
+      { href: 'data/cmdi.json',      label: 'CMDi',      src: 'data/cmdi.json' },
+      { href: 'data/ssti.json',      label: 'SSTI',      src: 'data/ssti.json' },
+      { href: 'data/traversal.json', label: 'Traversal', src: 'data/traversal.json' },
+      { href: 'data/xxe.json',       label: 'XXE',       src: 'data/xxe.json' },
+      { href: 'data/ssrf.json',      label: 'SSRF',      src: 'data/ssrf.json' },
+      { href: 'data/revshells.json', label: 'RevShells', src: 'data/revshells.json' },
+    ];
+    // Update stat counter
+    Promise.all([
+      ...['data/payloads.json','data/sqli.json','data/cmdi.json','data/ssti.json',
+          'data/traversal.json','data/xxe.json','data/ssrf.json','data/redirect.json',
+          'data/revshells.json','data/php.json','data/jwt.json','data/csrf.json',
+          'data/proto.json','data/deserial.json','data/smuggling.json','data/crlf.json',
+          'data/idor.json','data/nosql.json','data/graphql.json','data/oauth.json',
+          'data/racecond.json','data/websocket.json'
+      ].map(s => fetch(s + '?v=1', {cache:'force-cache'}).then(r=>r.json()).catch(()=>({payloads:[]})))
+    ]).then(all => {
+      const total = all.reduce((sum,d) => sum + (d.payloads||[]).length, 0);
+      document.querySelectorAll('.splash-stat-n').forEach((el,i) => {
+        if (i === 1) el.textContent = total + '+'; // payloads count
+      });
+    });
+  </script>
 </body>
 </html>

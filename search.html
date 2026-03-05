@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader — Global Search</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
+        </div>
+        <a href="generator.html"  class="nav-link">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link">XSS Lab</a>
+        <a href="encoder.html" class="nav-link">Encoder</a>
+        
+      </div>
+    </div>
+  </nav>
+
+  <div class="payloads-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-stats">
+        <div class="sstat">
+          <div class="sstat-num" id="gs-total">20</div>
+          <div class="sstat-label">Modules</div>
+        </div>
+        <div class="sstat">
+          <div class="sstat-num" id="gs-match">—</div>
+          <div class="sstat-label">Results</div>
+        </div>
+      </div>
+
+      <div class="sidebar-title">Search</div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="gs-input" placeholder="Search all 20 modules..." autocomplete="off">
+        <button class="search-clear" id="gs-clear" style="display:none;">✕</button>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-title">Tips</div>
+      <div style="font-size:0.78rem;color:var(--text3);line-height:1.7;padding:4px 0;">
+        Search across all 20 attack modules simultaneously. Matches code, descriptions, and tags.<br><br>
+        Try: <code>sleep</code>, <code>onerror</code>, <code>__proto__</code>, <code>gopher</code>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="payloads-main">
+      <div class="module-page-header">
+        <h1 class="module-page-title">Global <span style="color:var(--purple);text-shadow:var(--purple-text-glow);">Search</span></h1>
+        <p class="module-page-desc" id="gs-status">Loading payload databases...</p>
+      </div>
+
+      <div id="gs-results"></div>
+    </div>
+  </div>
+
+  <script src="js/search.js"></script>
+  <script>
+    // Wire result count to sidebar stat
+    const origShowStatus = GlobalSearch.prototype.showStatus;
+    document.addEventListener('DOMContentLoaded', () => {
+      const gs = window.globalSearch;
+      const orig = gs.run.bind(gs);
+      gs.run = function(query) {
+        orig(query);
+        // update sidebar match count after render
+        setTimeout(() => {
+          const status = document.getElementById('gs-status');
+          const match  = document.getElementById('gs-match');
+          if (status && match) {
+            const m = status.textContent.match(/^(\d+)/);
+            match.textContent = m ? m[1] : '—';
+          }
+        }, 50);
+      };
+    });
+  </script>
+</body>
+</html>

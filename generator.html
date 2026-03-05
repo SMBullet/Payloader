@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader — Payload Generator</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
+        </div>
+        <a href="generator.html"  class="nav-link active">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link">XSS Lab</a>
+        <a href="encoder.html" class="nav-link">Encoder</a>
+        </div>
+    </div>
+  </nav>
+
+  <!-- Hidden iframe used to verify generated payloads against lab contexts -->
+  <iframe id="gen-test-iframe" src="about:blank" sandbox="allow-scripts allow-same-origin" style="display:none;"></iframe>
+
+  <div class="generator-layout">
+    <h1>Payload <span class="accent">Generator</span></h1>
+    <p class="subtitle">Pick your injection context, WAF, and restrictions — get tailored payloads pulled from the verified database.</p>
+
+    <div class="generator-grid">
+
+      <!-- LEFT: Controls -->
+      <div class="gen-panel">
+        <div class="gen-panel-title">Configuration</div>
+
+        <div class="gen-field">
+          <label class="gen-label" for="ctx-select">Injection Context</label>
+          <select class="gen-select" id="ctx-select">
+            <option value="html">HTML Context</option>
+            <option value="javascript">JavaScript Context</option>
+            <option value="attribute">HTML Attribute</option>
+            <option value="dom">DOM XSS</option>
+            <option value="url">URL Parameter</option>
+            <option value="css">CSS Context</option>
+          </select>
+        </div>
+
+        <div class="gen-field">
+          <label class="gen-label" for="waf-select">WAF / Filter Type</label>
+          <select class="gen-select" id="waf-select">
+            <option value="none">No WAF</option>
+            <option value="cloudflare">Cloudflare WAF</option>
+            <option value="aws">AWS WAF</option>
+            <option value="akamai">Akamai WAF</option>
+            <option value="modsecurity">ModSecurity</option>
+            <option value="f5">F5 ASM</option>
+          </select>
+        </div>
+
+        <div class="gen-field">
+          <label class="gen-label">Character Restrictions</label>
+          <div class="gen-checkboxes">
+            <label class="gen-check"><input type="checkbox" id="r-angles"> No &lt; &gt; angle brackets</label>
+            <label class="gen-check"><input type="checkbox" id="r-quotes"> No quotes (" ')</label>
+            <label class="gen-check"><input type="checkbox" id="r-parens"> No parentheses ( )</label>
+            <label class="gen-check"><input type="checkbox" id="r-slash"> No forward slash /</label>
+            <label class="gen-check"><input type="checkbox" id="r-semi"> No semicolons ;</label>
+          </div>
+        </div>
+
+        <div class="gen-field">
+          <label class="gen-label">
+            <input type="checkbox" id="r-length" style="margin-right:6px;accent-color:var(--red);">
+            Max payload length
+          </label>
+          <div id="length-group" style="display:none;margin-top:8px;">
+            <input type="number" class="gen-input-num" id="max-length" min="10" max="500" value="80" placeholder="80 chars">
+          </div>
+        </div>
+
+        <div class="gen-field">
+          <label class="gen-label" for="count-select">Number of payloads</label>
+          <select class="gen-select" id="count-select">
+            <option value="1">1 payload</option>
+            <option value="3">3 payloads</option>
+            <option value="5" selected>5 payloads</option>
+            <option value="10">10 payloads</option>
+          </select>
+        </div>
+
+        <button class="gen-fire-btn" id="gen-btn">⚡ Generate Payloads</button>
+      </div>
+
+      <!-- RIGHT: Output -->
+      <div>
+        <div class="gen-panel">
+          <div class="gen-output-header">
+            <div class="gen-output-title">Generated Payloads</div>
+            <div class="gen-output-actions">
+              <button class="btn btn-sm btn-secondary" id="gen-export">Export .txt</button>
+              <button class="btn btn-sm btn-secondary" id="gen-refresh">↻ Refresh</button>
+            </div>
+          </div>
+
+          <div id="gen-output">
+            <div class="gen-placeholder">
+              <div class="gen-placeholder-icon">⚡</div>
+              Configure options and click Generate to get XSS payloads tailored to your target's context.
+            </div>
+          </div>
+        </div>
+
+        <!-- History -->
+        <div class="gen-history">
+          <div class="gen-history-title">History (last 20)</div>
+          <div id="gen-history-list">
+            <div style="font-size:0.8rem;color:var(--text3);text-align:center;padding:20px;">No history yet</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <script src="js/generator.js"></script>
+</body>
+</html>

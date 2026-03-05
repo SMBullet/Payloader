@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader — Encoder / Decoder</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    .encoder-layout {
+      max-width: 1100px; margin: 0 auto;
+      padding: 88px 28px 60px;
+    }
+    .encoder-layout h1 { font-size: 2.2rem; font-weight: 900; color: var(--white); margin-bottom: 6px; }
+    .encoder-layout h1 .accent { color: var(--purple); text-shadow: var(--purple-text-glow); }
+    .encoder-layout .subtitle { color: var(--text2); margin-bottom: 32px; }
+
+    .enc-mode-bar {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px;
+    }
+    .enc-mode-btn {
+      padding: 7px 16px; border-radius: var(--radius);
+      font-size: 0.8rem; font-weight: 700; font-family: var(--mono);
+      background: var(--bg3); border: 1px solid var(--border);
+      color: var(--text2); cursor: pointer; transition: var(--trans);
+    }
+    .enc-mode-btn:hover { border-color: var(--purple); color: var(--purple); }
+    .enc-mode-btn.active { background: var(--purple-dim); border-color: var(--purple); color: var(--purple); box-shadow: 0 0 8px rgba(192,0,255,0.2); }
+
+    .enc-grid {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 16px; align-items: start;
+    }
+    .enc-panel { background: var(--card-solid); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; }
+    .enc-panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 16px; border-bottom: 1px solid var(--border);
+      font-size: 0.72rem; font-weight: 800; text-transform: uppercase;
+      letter-spacing: 0.14em; color: var(--text3);
+    }
+    .enc-textarea {
+      width: 100%; min-height: 260px; padding: 16px;
+      background: var(--bg); border: none; outline: none; resize: vertical;
+      font-family: var(--mono); font-size: 0.83rem; color: var(--green);
+      line-height: 1.6; box-sizing: border-box;
+    }
+    .enc-textarea::placeholder { color: var(--text3); }
+    .enc-textarea:focus { box-shadow: inset 0 0 0 1px var(--purple); }
+
+    .enc-arrows {
+      display: flex; flex-direction: column; gap: 10px;
+      padding-top: 60px;
+    }
+    .enc-arrow-btn {
+      width: 44px; height: 44px; border-radius: 50%;
+      border: 1px solid var(--border); background: var(--bg3);
+      color: var(--text2); font-size: 1.1rem; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: var(--trans); flex-shrink: 0;
+    }
+    .enc-arrow-btn:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-dim); box-shadow: var(--purple-glow); }
+
+    .enc-actions {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px;
+    }
+
+    .enc-info-box {
+      margin-top: 28px; background: var(--card-solid);
+      border: 1px solid var(--border); border-radius: var(--radius-lg);
+      padding: 18px 20px;
+    }
+    .enc-info-title { font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.12em; color: var(--text3); margin-bottom: 10px; }
+    .enc-info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+    .enc-info-item { font-size: 0.8rem; color: var(--text2); }
+    .enc-info-item strong { color: var(--cyan); font-family: var(--mono); }
+
+    @media (max-width: 900px) {
+      .enc-grid { grid-template-columns: 1fr; }
+      .enc-arrows { flex-direction: row; padding-top: 0; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
+        </div>
+        <a href="generator.html"  class="nav-link">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link">XSS Lab</a>
+        <a href="encoder.html" class="nav-link active">Encoder</a>
+        
+      </div>
+    </div>
+  </nav>
+
+  <div class="encoder-layout">
+    <h1>Encoder / <span class="accent">Decoder</span></h1>
+    <p class="subtitle">Encode and decode payloads for WAF bypass, testing, and analysis.</p>
+
+    <!-- Mode selector -->
+    <div class="enc-mode-bar" id="mode-bar">
+      <button class="enc-mode-btn active" data-mode="url">URL Encode</button>
+      <button class="enc-mode-btn" data-mode="double-url">Double URL</button>
+      <button class="enc-mode-btn" data-mode="base64">Base64</button>
+      <button class="enc-mode-btn" data-mode="html">HTML Entity</button>
+      <button class="enc-mode-btn" data-mode="unicode">Unicode Escape</button>
+      <button class="enc-mode-btn" data-mode="hex">Hex Encode</button>
+      <button class="enc-mode-btn" data-mode="rot13">ROT13</button>
+      <button class="enc-mode-btn" data-mode="jwt-decode">JWT Decode</button>
+    </div>
+
+    <!-- Encode / Decode grid -->
+    <div class="enc-grid">
+
+      <div class="enc-panel">
+        <div class="enc-panel-head">
+          <span>Input</span>
+          <button class="btn btn-sm btn-secondary" id="clear-input">Clear</button>
+        </div>
+        <textarea class="enc-textarea" id="enc-input" placeholder="Paste your payload or string here..."></textarea>
+      </div>
+
+      <div class="enc-arrows">
+        <button class="enc-arrow-btn" id="btn-encode" title="Encode →">→</button>
+        <button class="enc-arrow-btn" id="btn-decode" title="← Decode">←</button>
+        <button class="enc-arrow-btn" id="btn-swap"   title="Swap">⇅</button>
+      </div>
+
+      <div class="enc-panel">
+        <div class="enc-panel-head">
+          <span>Output</span>
+          <button class="btn btn-sm btn-secondary" id="copy-output">Copy</button>
+        </div>
+        <textarea class="enc-textarea" id="enc-output" placeholder="Result appears here..." readonly></textarea>
+      </div>
+
+    </div>
+
+    <div class="enc-actions">
+      <button class="btn btn-primary" id="btn-encode-main">⚡ Encode</button>
+      <button class="btn btn-secondary" id="btn-decode-main">↩ Decode</button>
+      <span id="enc-error" style="font-size:0.8rem;color:var(--red);align-self:center;"></span>
+    </div>
+
+    <!-- Info box -->
+    <div class="enc-info-box">
+      <div class="enc-info-title" id="mode-info-title">URL Encode</div>
+      <div class="enc-info-grid" id="mode-info-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const MODE_INFO = {
+      'url':        { title: 'URL Encode',       desc: 'Encodes special characters as %XX hex. Use for query strings, paths, and form values. Decodes %XX sequences back to chars.' },
+      'double-url': { title: 'Double URL Encode', desc: 'Encodes the output of URL encoding again (%25XX). Bypasses WAFs that decode only once. Decodes two rounds of %XX.' },
+      'base64':     { title: 'Base64',            desc: 'Standard Base64 (RFC 4648). Used for data URIs, JWT payloads, and encoding binary in text contexts.' },
+      'html':       { title: 'HTML Entity',       desc: 'Encodes <, >, ", \', & as named or decimal HTML entities. Decodes &#xx; and &name; back to chars.' },
+      'unicode':    { title: 'Unicode Escape',    desc: 'Encodes each character as \\uXXXX. Useful for bypassing JS string filters and XSS in script contexts.' },
+      'hex':        { title: 'Hex Encode',        desc: 'Encodes each character as \\xXX hex. Useful for bypassing filters in eval() and template injection contexts.' },
+      'rot13':      { title: 'ROT13',             desc: 'Rotates each letter by 13 positions. Symmetric — encode and decode are the same operation. Used in some obfuscation.' },
+      'jwt-decode': { title: 'JWT Decode',        desc: 'Decodes all three parts of a JWT (header.payload.signature) without verification. Paste a full JWT token in the input.' },
+    };
+
+    const ENCODERS = {
+      'url': {
+        encode: s => encodeURIComponent(s),
+        decode: s => decodeURIComponent(s),
+      },
+      'double-url': {
+        encode: s => encodeURIComponent(encodeURIComponent(s)),
+        decode: s => decodeURIComponent(decodeURIComponent(s)),
+      },
+      'base64': {
+        encode: s => btoa(unescape(encodeURIComponent(s))),
+        decode: s => decodeURIComponent(escape(atob(s.trim()))),
+      },
+      'html': {
+        encode: s => s.replace(/[\u00A0-\u9999<>\&"']/g, c => '&#' + c.charCodeAt(0) + ';'),
+        decode: s => {
+          const ta = document.createElement('textarea');
+          ta.innerHTML = s;
+          return ta.value;
+        },
+      },
+      'unicode': {
+        encode: s => [...s].map(c => '\\u' + c.charCodeAt(0).toString(16).padStart(4,'0')).join(''),
+        decode: s => s.replace(/\\u([0-9a-fA-F]{4})/g, (_, h) => String.fromCharCode(parseInt(h, 16))),
+      },
+      'hex': {
+        encode: s => [...s].map(c => '\\x' + c.charCodeAt(0).toString(16).padStart(2,'0')).join(''),
+        decode: s => s.replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16))),
+      },
+      'rot13': {
+        encode: s => s.replace(/[a-zA-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + (c.toLowerCase() < 'n' ? 13 : -13))),
+        decode: s => s.replace(/[a-zA-Z]/g, c => String.fromCharCode(c.charCodeAt(0) + (c.toLowerCase() < 'n' ? 13 : -13))),
+      },
+      'jwt-decode': {
+        encode: s => s, // no encoding for JWT
+        decode: s => {
+          try {
+            const parts = s.trim().split('.');
+            if (parts.length < 2) throw new Error('Not a JWT (need at least header.payload)');
+            const dec = p => JSON.stringify(JSON.parse(decodeURIComponent(escape(atob(p.replace(/-/g,'+').replace(/_/g,'/'))))), null, 2);
+            return `=== HEADER ===\n${dec(parts[0])}\n\n=== PAYLOAD ===\n${dec(parts[1])}\n\n=== SIGNATURE ===\n${parts[2] || '(none)'}`;
+          } catch(e) { throw new Error('Invalid JWT: ' + e.message); }
+        },
+      },
+    };
+
+    let activeMode = 'url';
+
+    function setMode(mode) {
+      activeMode = mode;
+      document.querySelectorAll('.enc-mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+      const info = MODE_INFO[mode] || {};
+      document.getElementById('mode-info-title').textContent = info.title || mode;
+      document.getElementById('mode-info-grid').innerHTML = `<div class="enc-info-item">${info.desc || ''}</div>`;
+      document.getElementById('enc-error').textContent = '';
+    }
+
+    function run(direction) {
+      const input  = document.getElementById('enc-input').value;
+      const outEl  = document.getElementById('enc-output');
+      const errEl  = document.getElementById('enc-error');
+      errEl.textContent = '';
+      if (!input.trim()) { outEl.value = ''; return; }
+      try {
+        const fn = ENCODERS[activeMode]?.[direction];
+        outEl.value = fn ? fn(input) : input;
+      } catch(e) {
+        errEl.textContent = e.message;
+        outEl.value = '';
+      }
+    }
+
+    document.getElementById('mode-bar').addEventListener('click', e => {
+      const btn = e.target.closest('.enc-mode-btn');
+      if (btn) setMode(btn.dataset.mode);
+    });
+
+    document.getElementById('btn-encode').addEventListener('click', () => run('encode'));
+    document.getElementById('btn-decode').addEventListener('click', () => run('decode'));
+    document.getElementById('btn-encode-main').addEventListener('click', () => run('encode'));
+    document.getElementById('btn-decode-main').addEventListener('click', () => run('decode'));
+
+    document.getElementById('btn-swap').addEventListener('click', () => {
+      const i = document.getElementById('enc-input');
+      const o = document.getElementById('enc-output');
+      const tmp = i.value; i.value = o.value; o.value = tmp;
+    });
+
+    document.getElementById('clear-input').addEventListener('click', () => {
+      document.getElementById('enc-input').value = '';
+      document.getElementById('enc-output').value = '';
+      document.getElementById('enc-error').textContent = '';
+    });
+
+    document.getElementById('copy-output').addEventListener('click', () => {
+      const v = document.getElementById('enc-output').value;
+      if (!v) return;
+      navigator.clipboard?.writeText(v).then(() => {
+        const btn = document.getElementById('copy-output');
+        const orig = btn.textContent; btn.textContent = '✓ Copied';
+        setTimeout(() => btn.textContent = orig, 1400);
+      });
+    });
+
+    // Live encode on input (optional)
+    document.getElementById('enc-input').addEventListener('input', () => {
+      if (document.getElementById('enc-input').value) run('encode');
+    });
+
+    setMode('url');
+  </script>
+</body>
+</html>

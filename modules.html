@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader — Attacks</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link active">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
+        </div>
+        <a href="generator.html"  class="nav-link">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link">XSS Lab</a>
+        <a href="encoder.html" class="nav-link">Encoder</a>
+        </div>
+    </div>
+  </nav>
+
+  <div class="home-wrap">
+
+    <section class="hero" style="min-height:320px;">
+      <div class="hero-red-glow"></div>
+      <div class="hero-inner" style="grid-template-columns:1fr;text-align:center;gap:24px;">
+        <div class="hero-content" style="max-width:700px;margin:0 auto;">
+          <div class="hero-eyebrow">
+            <span class="dot"></span> Web Security Research
+          </div>
+          <h1 class="hero-title">All <span class="accent-purple">Attacks</span></h1>
+          <p class="hero-desc">
+            Curated payload libraries for every major web attack class — SQL injection, command injection, SSTI, path traversal, XXE, SSRF, and more.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="categories-section section section--dark">
+      <div style="max-width:1300px;margin:0 auto;">
+        <div class="section-header">
+          <div class="section-tag">All Attacks</div>
+          <div class="section-title">22 attack categories</div>
+          <div class="section-sub">Click any module to open the payload browser with search, filters, copy, and export. Each module also has an <strong style="color:var(--cyan);">ℹ About</strong> button with in-depth methodology, testing steps, and references.</div>
+        </div>
+
+        <div class="categories-grid" id="modules-grid">
+
+          <a href="payloads.html" class="cat-card">
+            <div class="cat-icon">⚡</div>
+            <div class="cat-name">XSS</div>
+            <div class="cat-count" id="cnt-xss"></div>
+            <div class="cat-desc">Cross-site scripting — 123 payloads across 10 event categories. Includes automated lab verifier.</div>
+          </a>
+
+          <a href="module.html?src=data/sqli.json&name=SQL+Injection" class="cat-card">
+            <div class="cat-icon">🗄️</div>
+            <div class="cat-name">SQL Injection</div>
+            <div class="cat-count" id="cnt-sqli"></div>
+            <div class="cat-desc">Auth bypass, error-based, blind, UNION, stacked queries, OOB exfiltration. MySQL/MSSQL/PostgreSQL/Oracle.</div>
+          </a>
+
+          <a href="module.html?src=data/cmdi.json&name=Command+Injection" class="cat-card">
+            <div class="cat-icon">💻</div>
+            <div class="cat-name">Command Injection</div>
+            <div class="cat-count" id="cnt-cmdi"></div>
+            <div class="cat-desc">Linux and Windows OS injection — delimiters, substitution, blind OOB, WAF bypass techniques.</div>
+          </a>
+
+          <a href="module.html?src=data/ssti.json&name=SSTI" class="cat-card">
+            <div class="cat-icon">🧱</div>
+            <div class="cat-name">SSTI</div>
+            <div class="cat-count" id="cnt-ssti"></div>
+            <div class="cat-desc">Server-side template injection for Jinja2, Twig, Freemarker, Velocity, Smarty, ERB, Mako. Includes RCE chains.</div>
+          </a>
+
+          <a href="module.html?src=data/traversal.json&name=Path+Traversal" class="cat-card">
+            <div class="cat-icon">📁</div>
+            <div class="cat-name">Path Traversal</div>
+            <div class="cat-count" id="cnt-traversal"></div>
+            <div class="cat-desc">Directory traversal — basic, URL-encoded, double-encoded, null-byte, Windows variants, and filter bypasses.</div>
+          </a>
+
+          <a href="module.html?src=data/xxe.json&name=XXE" class="cat-card">
+            <div class="cat-icon">🗃️</div>
+            <div class="cat-name">XXE</div>
+            <div class="cat-count" id="cnt-xxe"></div>
+            <div class="cat-desc">XML External Entity injection — LFI, SSRF via XXE, blind OOB DNS/HTTP exfil, parameter entities, SVG/upload.</div>
+          </a>
+
+          <a href="module.html?src=data/ssrf.json&name=SSRF" class="cat-card">
+            <div class="cat-icon">🌐</div>
+            <div class="cat-name">SSRF</div>
+            <div class="cat-count" id="cnt-ssrf"></div>
+            <div class="cat-desc">Server-side request forgery — AWS/GCP/Azure metadata, localhost bypasses, protocol tricks, blind detection.</div>
+          </a>
+
+          <a href="module.html?src=data/redirect.json&name=Open+Redirect" class="cat-card">
+            <div class="cat-icon">↪️</div>
+            <div class="cat-name">Open Redirect</div>
+            <div class="cat-count" id="cnt-redirect"></div>
+            <div class="cat-desc">URL redirection — protocol-relative, whitelist bypass, at-sign tricks, CRLF-based redirect injection.</div>
+          </a>
+
+          <a href="module.html?src=data/revshells.json&name=Reverse+Shells" class="cat-card">
+            <div class="cat-icon">🐚</div>
+            <div class="cat-name">Reverse Shells</div>
+            <div class="cat-count" id="cnt-revshells"></div>
+            <div class="cat-desc">Bash, Python, PHP, Perl, Ruby, PowerShell, Netcat, Socat one-liners. Replace LHOST/LPORT with your listener.</div>
+          </a>
+
+          <a href="module.html?src=data/php.json&name=PHP+Attacks" class="cat-card">
+            <div class="cat-icon">🐘</div>
+            <div class="cat-name">PHP Attacks</div>
+            <div class="cat-count" id="cnt-php"></div>
+            <div class="cat-desc">Webshells, type juggling, LFI stream wrappers, RFI, object injection via unserialize(), dangerous functions.</div>
+          </a>
+
+          <a href="module.html?src=data/jwt.json&name=JWT+Attacks" class="cat-card">
+            <div class="cat-icon">🔑</div>
+            <div class="cat-name">JWT Attacks</div>
+            <div class="cat-count" id="cnt-jwt"></div>
+            <div class="cat-desc">alg:none bypass, RS256→HS256 confusion, weak secret cracking, kid path traversal/SQLi, JWK/jku injection.</div>
+          </a>
+
+          <a href="module.html?src=data/csrf.json&name=CSRF" class="cat-card">
+            <div class="cat-icon">🎭</div>
+            <div class="cat-name">CSRF</div>
+            <div class="cat-count" id="cnt-csrf"></div>
+            <div class="cat-desc">GET/POST/JSON/fetch CSRF PoC templates, multipart, CORS misconfiguration, account takeover patterns.</div>
+          </a>
+
+          <a href="module.html?src=data/proto.json&name=Prototype+Pollution" class="cat-card">
+            <div class="cat-icon">⚙️</div>
+            <div class="cat-name">Prototype Pollution</div>
+            <div class="cat-count" id="cnt-proto"></div>
+            <div class="cat-desc">__proto__ and constructor.prototype pollution — client-side, Node.js, JSON body, RCE gadget chains.</div>
+          </a>
+
+          <a href="module.html?src=data/deserial.json&name=Deserialization" class="cat-card">
+            <div class="cat-icon">📦</div>
+            <div class="cat-name">Deserialization</div>
+            <div class="cat-count" id="cnt-deserial"></div>
+            <div class="cat-desc">Insecure deserialization — PHP unserialize, Java ysoserial gadgets, Python pickle RCE, Node.js node-serialize.</div>
+          </a>
+
+          <a href="module.html?src=data/smuggling.json&name=HTTP+Smuggling" class="cat-card">
+            <div class="cat-icon">🚦</div>
+            <div class="cat-name">HTTP Smuggling</div>
+            <div class="cat-count" id="cnt-smuggling"></div>
+            <div class="cat-desc">CL.TE, TE.CL, TE.TE, and H2 downgrade smuggling — front-end/back-end desync for request poisoning.</div>
+          </a>
+
+          <a href="module.html?src=data/crlf.json&name=CRLF+Injection" class="cat-card">
+            <div class="cat-icon">📬</div>
+            <div class="cat-name">CRLF Injection</div>
+            <div class="cat-count" id="cnt-crlf"></div>
+            <div class="cat-desc">Header injection, response splitting, cache poisoning, log forgery via %0d%0a and Unicode CR/LF variants.</div>
+          </a>
+
+          <a href="module.html?src=data/idor.json&name=IDOR" class="cat-card">
+            <div class="cat-icon">🔓</div>
+            <div class="cat-name">IDOR</div>
+            <div class="cat-count" id="cnt-idor"></div>
+            <div class="cat-desc">Insecure direct object reference — horizontal/vertical privilege escalation, GUID bypass, mass assignment.</div>
+          
+          <a href="module.html?src=data/nosql.json&name=NoSQL+Injection" class="cat-card">
+            <div class="cat-icon">🍃</div>
+            <div class="cat-name">NoSQL Injection</div>
+            <div class="cat-count" id="cnt-nosql"></div>
+            <div class="cat-desc">MongoDB operator injection, CouchDB auth bypass, Redis RCE via SSRF, blind extraction and OOB exfiltration.</div>
+          </a>
+
+          <a href="module.html?src=data/graphql.json&name=GraphQL+Attacks" class="cat-card">
+            <div class="cat-icon">◉</div>
+            <div class="cat-name">GraphQL Attacks</div>
+            <div class="cat-count" id="cnt-graphql"></div>
+            <div class="cat-desc">Introspection abuse, schema dump, injection via arguments, batching/alias DoS, SSRF, and auth bypass.</div>
+          </a>
+
+          <a href="module.html?src=data/oauth.json&name=OAuth+Attacks" class="cat-card">
+            <div class="cat-icon">🔐</div>
+            <div class="cat-name">OAuth Attacks</div>
+            <div class="cat-count" id="cnt-oauth"></div>
+            <div class="cat-desc">redirect_uri bypass, state CSRF, PKCE downgrade, token theft, silent re-auth, and JWT bearer forgery.</div>
+          </a>
+
+          <a href="module.html?src=data/racecond.json&name=Race+Condition+Attacks" class="cat-card">
+            <div class="cat-icon">⚡</div>
+            <div class="cat-name">Race Conditions</div>
+            <div class="cat-count" id="cnt-racecond"></div>
+            <div class="cat-desc">Limit overrun, TOCTOU, double-spend, multi-endpoint races, and concurrent request attack PoCs.</div>
+          </a>
+
+          <a href="module.html?src=data/websocket.json&name=WebSocket+Attacks" class="cat-card">
+            <div class="cat-icon">🔌</div>
+            <div class="cat-name">WebSocket Attacks</div>
+            <div class="cat-count" id="cnt-websocket"></div>
+            <div class="cat-desc">CSWSH hijacking, injection via messages, XSS broadcast, SSRF, origin bypass, and message manipulation.</div>
+          </a>
+
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner" style="max-width:1300px;margin:0 auto;">
+      <div>
+        <div class="footer-brand">⚡ Payloader</div>
+        <div class="footer-desc">Web security payload vault and testing sandbox.</div>
+      </div>
+      <div>
+        <div class="footer-heading">Quick Links</div>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="payloads.html">XSS Payloads</a></li>
+          <li><a href="generator.html">Generator</a></li>
+          <li><a href="lab.html">Lab</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Load payload counts for each module card
+    const modules = [
+      { id: 'cnt-sqli',      src: 'data/sqli.json' },
+      { id: 'cnt-cmdi',      src: 'data/cmdi.json' },
+      { id: 'cnt-ssti',      src: 'data/ssti.json' },
+      { id: 'cnt-traversal', src: 'data/traversal.json' },
+      { id: 'cnt-xxe',       src: 'data/xxe.json' },
+      { id: 'cnt-ssrf',      src: 'data/ssrf.json' },
+      { id: 'cnt-redirect',  src: 'data/redirect.json' },
+      { id: 'cnt-revshells', src: 'data/revshells.json' },
+      { id: 'cnt-php',       src: 'data/php.json' },
+      { id: 'cnt-jwt',       src: 'data/jwt.json' },
+      { id: 'cnt-csrf',      src: 'data/csrf.json' },
+      { id: 'cnt-proto',     src: 'data/proto.json' },
+      { id: 'cnt-deserial',  src: 'data/deserial.json' },
+      { id: 'cnt-smuggling', src: 'data/smuggling.json' },
+      { id: 'cnt-crlf',      src: 'data/crlf.json' },
+      { id: 'cnt-idor',      src: 'data/idor.json' },
+      { id: 'cnt-nosql',     src: 'data/nosql.json' },
+      { id: 'cnt-graphql',   src: 'data/graphql.json' },
+      { id: 'cnt-oauth',     src: 'data/oauth.json' },
+      { id: 'cnt-racecond',  src: 'data/racecond.json' },
+      { id: 'cnt-websocket', src: 'data/websocket.json' },
+    ];
+    modules.forEach(m => {
+      fetch(m.src + '?v=1', { cache: 'force-cache' })
+        .then(r => r.json())
+        .then(d => {
+          const el = document.getElementById(m.id);
+          if (el) el.textContent = (d.payloads||[]).length + ' payloads';
+        }).catch(() => {});
+    });
+
+    // XSS count from payloads.json
+    fetch('data/payloads.json?v=1', { cache: 'force-cache' })
+      .then(r => r.json())
+      .then(d => {
+        const el = document.getElementById('cnt-xss');
+        if (el) el.textContent = (d.payloads||[]).length + ' payloads';
+      }).catch(() => {});
+  </script>
+</body>
+</html>

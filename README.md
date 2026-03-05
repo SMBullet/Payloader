@@ -1,123 +1,158 @@
-# 🥷 XSSNow - The Ultimate XSS Arsenal
+# Payloader
 
-<div align="center">
+A static, client-side web security research platform with curated payload libraries for 20 attack categories, a constraint-based XSS generator, an attack payload generator with WAF transforms, a global search, an encoder/decoder, favorites, and a deliberately vulnerable multi-context XSS lab.
 
-![XSSNow Logo](/assets/xss_now_logo.png)
+## Project Layout
 
+```text
+.
+├── index.html              # Home (single-viewport splash)
+├── modules.html            # Attack module hub (20 categories)
+├── module.html             # Generic payload browser (loads any JSON module)
+├── payloads.html           # XSS payload browser + automated test runner
+├── generator.html          # XSS payload generator (context/WAF/restrictions)
+├── attack-gen.html         # Attack payload generator (20 modules, WAF transforms)
+├── lab.html                # Deliberately vulnerable lab (4 XSS contexts)
+├── search.html             # Global search across all 20 modules
+├── encoder.html            # Encoder / Decoder (URL, Base64, HTML, Unicode, Hex, JWT)
+├── favorites.html          # Saved/starred payloads (localStorage)
+├── manifest.json           # PWA manifest
+├── sw.js                   # Service worker (offline caching)
+├── css/
+│   └── styles.css          # Shared cyberpunk neon theme
+├── js/
+│   ├── app.js              # Home page logic
+│   ├── payloads.js         # XSS filtering, rendering, test runner, export
+│   ├── module.js           # Generic module browser (search, filter, copy, favorites, export)
+│   ├── generator.js        # Context matching, restrictions, WAF transforms, lab verification
+│   ├── attack-gen.js       # Attack generator (20 modules, WAF bypass transforms)
+│   ├── search.js           # Global search across all modules
+│   ├── favorites.js        # Favorites manager (localStorage)
+│   └── lab.js              # Injection sinks + XSS execution detection
+├── data/
+│   ├── payloads.json       # XSS payloads (123 entries, 10 event categories)
+│   ├── sqli.json           # SQL Injection (42 payloads)
+│   ├── cmdi.json           # Command Injection (30 payloads)
+│   ├── ssti.json           # Server-Side Template Injection (37 payloads)
+│   ├── traversal.json      # Path Traversal (30 payloads)
+│   ├── xxe.json            # XXE Injection (22 payloads)
+│   ├── ssrf.json           # SSRF (28 payloads)
+│   ├── redirect.json       # Open Redirect (22 payloads)
+│   ├── revshells.json      # Reverse Shells (32 payloads)
+│   ├── php.json            # PHP Attacks (26 payloads)
+│   ├── jwt.json            # JWT Attacks (20 payloads)
+│   ├── csrf.json           # CSRF PoC Templates (18 payloads)
+│   ├── proto.json          # Prototype Pollution (20 payloads)
+│   ├── deserial.json       # Deserialization (18 payloads)
+│   ├── smuggling.json      # HTTP Request Smuggling (16 payloads)
+│   ├── crlf.json           # CRLF Injection (16 payloads)
+│   ├── idor.json           # IDOR (14 payloads)
+│   ├── nosql.json          # NoSQL Injection (25 payloads)
+│   ├── graphql.json        # GraphQL Attacks (22 payloads)
+│   └── oauth.json          # OAuth Attacks (20 payloads)
+└── assets/
+    └── README.txt          # Logo placeholder note
+```
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-xssnow.in-00d4aa?style=for-the-badge)](https://xssnow.in)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
-[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
+## Modules
 
-XSSNow is a community-driven, curated knowledge base of Cross-Site Scripting (XSS) payloads, designed to help security researchers, bug bounty hunters, and learners quickly find relevant, real-world payloads for different XSS scenarios.
+| Module | Payloads | Coverage |
+|---|---|---|
+| XSS | 123 | 10 event categories, auto-exec + interaction |
+| SQL Injection | 42 | auth bypass, error-based, blind, UNION, stacked, OOB |
+| Command Injection | 30 | Linux/Windows delimiters, substitution, blind OOB |
+| SSTI | 37 | Jinja2, Twig, Freemarker, Velocity, Smarty, ERB, Mako |
+| Path Traversal | 30 | basic, encoded, double-encoded, null-byte, Windows |
+| XXE | 22 | LFI, SSRF, blind OOB, parameter entities, SVG/upload |
+| SSRF | 28 | AWS/GCP/Azure metadata, localhost bypass, protocols |
+| Open Redirect | 22 | basic, whitelist bypass, CRLF-based injection |
+| Reverse Shells | 32 | Bash, Python, PHP, Perl, Ruby, PowerShell, Netcat, Socat |
+| PHP Attacks | 26 | webshells, type juggling, LFI wrappers, unserialize |
+| JWT Attacks | 20 | alg:none, RS->HS confusion, kid injection, JWK/jku |
+| CSRF | 18 | GET/POST/JSON/fetch PoC, CORS misconfiguration |
+| Prototype Pollution | 20 | __proto__, constructor, Node.js RCE gadgets |
+| Deserialization | 18 | PHP, Java ysoserial, Python pickle, Node.js |
+| HTTP Smuggling | 16 | CL.TE, TE.CL, TE.TE, H2 downgrade |
+| CRLF Injection | 16 | header injection, response splitting, cache poisoning |
+| IDOR | 14 | horizontal/vertical, GUID bypass, mass assignment |
+| NoSQL Injection | 25 | MongoDB operators, CouchDB, Redis RCE, blind, OOB |
+| GraphQL Attacks | 22 | introspection, injection, DoS, SSRF, auth bypass |
+| OAuth Attacks | 20 | redirect_uri, state CSRF, PKCE bypass, token theft |
 
-</div>
+## Features
 
----
+### XSS Payload Browser (payloads.html)
+- 123 payloads from the PortSwigger XSS cheat sheet
+- Filter by category, execution type, test status, and feature flags
+- Automated test runner: runs auto-exec payloads in a sandboxed iframe, detects via postMessage
+- Export filtered list to .txt
 
-## 🎯 **The Problem We're Solving**
+### Generic Module Browser (module.html)
+- Loads any data/*.json module via `?src=` URL parameter
+- Dynamic sidebar: category and platform filters built from JSON data
+- Search, filter, copy, ⭐ favorite, export
 
-Cross-Site Scripting (XSS) vulnerabilities remain one of the most prevalent security threats in modern web applications. Security researchers, penetration testers, and bug bounty hunters face constant challenges:
+### XSS Payload Generator (generator.html)
+- Context-based filtering: HTML, JavaScript string, HTML attribute, DOM XSS
+- WAF transform presets: Cloudflare, AWS WAF, Akamai, ModSecurity, F5
+- Character/length restriction filters
+- Live lab verification: every generated payload tested in hidden iframe before return
 
-- **Scattered Knowledge** - XSS payloads are buried across blogs, forums, and personal notes
-- **Context Confusion** - Not knowing which payload works in specific injection contexts
-- **Defense Evolution** - Modern WAFs and filters require increasingly sophisticated bypass techniques
-- **Learning Curve** - Beginners struggle to understand why certain payloads work while others fail
-- **Time Pressure** - Security testing demands quick access to relevant, working payloads
+### Attack Generator (attack-gen.html)
+- 20 attack modules with category/platform filters
+- WAF/bypass transform presets: URL encode, double URL, case randomize, comment insert, null byte, hex
+- Shuffle + pick N payloads from filtered pool
+- Export results to .txt
 
-## 🚀 **Our Solution**
+### Global Search (search.html)
+- Searches all 20 modules simultaneously
+- Results grouped by module with highlighted matches
+- Copy individual results
+- URL param support: `?q=sleep` to deep-link searches
 
-XSSNow transforms the chaotic landscape of XSS exploitation into a structured, intelligent arsenal. We've built more than just a payload database - we've created an ecosystem that understands context, evolves with defenses, and accelerates discovery.
+### Encoder / Decoder (encoder.html)
+- URL encode/decode
+- Double URL encode/decode
+- Base64 encode/decode
+- HTML entity encode/decode
+- Unicode escape (`\uXXXX`)
+- Hex encode (`\xXX`)
+- ROT13
+- JWT decode (no verification)
 
-### 🧠 **Intelligent Payload Organization**
-- **Context-Aware Categorization** - Payloads organized by injection context, not just syntax
-- **Defense-Focused Grouping** - Specific collections for WAF bypasses, encoding evasions, and filter circumvention
-- **Difficulty Progression** - From beginner-friendly basics to expert-level polyglots
-- **Real-World Testing** - Every payload validated against actual applications and defense mechanisms
+### Favorites (favorites.html)
+- Star any payload in any module with the ⭐ button
+- Persisted in browser localStorage (survives page refresh)
+- Filter by module, search, export to .txt, clear all
 
-### ⚡ **Advanced Payload Generation**
-- **Smart Context Detection** - Understands where your injection point sits in the application flow
-- **Restriction-Aware Suggestions** - Adapts to character limitations, encoding constraints, and input filters
-- **WAF-Specific Optimization** - Tailored bypass techniques for major firewall vendors
-- **Custom Length Optimization** - Generates payloads within strict character limits
+### Vulnerable Lab (lab.html)
+- Reflected XSS (innerHTML sink)
+- DOM XSS (location.hash sink)
+- Attribute context injection
+- JavaScript string context with eval
+- Defense Mode toggle showing mitigated vs vulnerable behavior
 
-### 🛡️ **Modern Defense Awareness**
-- **CSP Bypass Techniques** - Navigate Content Security Policy restrictions with confidence
-- **Encoding Evasion** - Break through HTML entity encoding, URL encoding, and custom sanitizers
-- **Filter Circumvention** - Proven methods to bypass keyword blacklists and regex filters
-- **Browser Quirks** - Leverage parser differences across modern browser engines
+## Running Locally
 
----
+```bash
+cd Payloader
+npx serve .
+# or
+python -m http.server 8080
+```
 
-## 🔥 **What Makes XSSNow Different**
+Open: http://localhost:8080/
 
-| Traditional Approach | XSSNow Advantage |
-|---------------------|------------------|
-| Static payload lists | Dynamic, context-aware generation |
-| Generic collections | Defense-specific categorization |
-| Copy-paste mentality | Educational understanding |
-| Outdated techniques | Real-time effectiveness tracking |
-| Isolated research | Community-driven validation |
+The service worker enables offline use after first load.
 
----
+## Notes
 
-### 🌐 **Instant Access**
-Visit [xssnow.in](https://xssnow.in) and start exploring immediately. No installation required.
+- No backend, no build step, no external runtime dependencies
+- Test runner results are session-memory only
+- For reverse shell payloads: replace LHOST/LPORT with your listener details
+- Favorites are stored in `localStorage['payloader-favorites']`
 
----
+## Ethics & Safety
 
-## 📋 **Payload Categories**
-
-### 🎯 **Context-Based Classification**
-- **HTML Injection** - Direct markup insertion and tag manipulation
-- **Attribute Breaking** - Escaping from HTML attributes and event handlers
-- **JavaScript Context** - String breaking and code execution within JS
-- **CSS Injection** - Style-based attacks and expression exploitation
-- **URL Parameters** - Query string and fragment-based vectors
-
-### 🛡️ **Defense-Focused Collections**
-- **WAF Bypasses** - Techniques for major firewall vendors
-- **Encoding Evasions** - Character set manipulation and obfuscation
-- **Filter Circumvention** - Keyword blacklist and regex bypass
-- **CSP Violations** - Content Security Policy escape techniques
-- **Polyglot Attacks** - Multi-context universal payloads
-
----
-
-## 🤝 **Join the Revolution**
-
-XSSNow thrives on community collaboration. Whether you're discovering new bypass techniques, improving existing payloads, or sharing knowledge - your contributions drive the platform forward.
-
-### 💡 **Ways to Contribute**
-- **Submit Payloads** - Share your latest discoveries and bypass techniques
-- **Improve Documentation** - Help others understand complex attack vectors
-- **Test Effectiveness** - Validate payloads against real-world applications
-- **Share Knowledge** - Write tutorials and educational content
-- **Report Issues** - Help us maintain platform quality
-
-[**→ Read our Contributing Guidelines**](CONTRIBUTING.md)
-
----
-
-## ⚠️ **Responsible Security Research**
-
-Do NOT use these payloads on systems you do not own or have explicit permission to test.
-
----
-
-## 📄 **License**
-
-Licensed under the MIT License - empowering open security research while maintaining responsible usage standards.
-
----
-
-<div align="center">
-
-**Built with ❤️ by [Sid Joshi](https://www.linkedin.com/in/sid-j0shi/) ([@dr34mhacks](https://github.com/dr34mhacks))**
-
-*If XSS helped you once, XSSNow is here to help you every time.* 🛡️
-
-[![Visit XSSNow](https://img.shields.io/badge/Visit-xssnow.in-00d4aa?style=for-the-badge)](https://xssnow.in)
-[![Star on GitHub](https://img.shields.io/github/stars/dr34mhacks/XSSNow?style=for-the-badge)](https://github.com/dr34mhacks/XSSNow)
-
-</div>
+For authorized security testing, CTF competitions, bug bounty research, and security education only.
+Never test systems without explicit written permission.

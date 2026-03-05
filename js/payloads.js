@@ -1,14 +1,18 @@
-/* Modern Payloads Page JavaScript */
+/* XSSVault — Payloads Page + Automated Test Runner */
 
-class PayloadsManager {
+class XSSVault {
   constructor() {
-    this.payloads = [];
-    this.filteredPayloads = [];
-    this.currentView = 'cards';
+    this.allPayloads      = [];
+    this.filtered         = [];
+    this.view             = 'cards'; // 'cards' | 'list'
+    this.testResults      = {};      // id -> 'verified' | 'failed'
+    this.testRunning      = false;
+
     this.filters = {
       search: '',
       category: 'all',
-      context: [],
+      exec: 'all',
+      status: 'all',
       features: []
     };
 
@@ -17,572 +21,440 @@ class PayloadsManager {
 
   async init() {
     await this.loadPayloads();
-    this.setupEventListeners();
-    this.renderPayloads();
-    this.updateStats();
+    this.buildCategoryCounts();
+    this.setupEvents();
+
+    // Pre-select category from ?cat= URL param (from home page links)
+    const urlCat = new URLSearchParams(location.search).get('cat');
+    if (urlCat) {
+      const radio = document.querySelector(`input[name="cat"][value="${urlCat}"]`);
+      if (radio) { radio.checked = true; this.filters.category = urlCat; }
+    }
+
+    this.applyFilters();
   }
 
   async loadPayloads() {
     try {
-      const response = await fetch('data/payloads.yaml?v=' + Date.now(), {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache'
-        }
-      });
-      const yamlText = await response.text();
-      const yamlData = jsyaml.load(yamlText) || {};
-      this.payloads = yamlData.payloads || [];
-
-      this.filteredPayloads = [...this.payloads];
-
-    } catch (error) {
-      console.error('Failed to load payloads:', error);
-      this.payloads = this.getFallbackPayloads();
-      this.filteredPayloads = [...this.payloads];
+      const r    = await fetch('data/payloads.json?v=' + Date.now(), { cache: 'no-cache' });
+      const data = await r.json();
+      this.allPayloads = data.payloads || [];
+    } catch (e) {
+      console.error('Failed to load payloads:', e);
+      this.allPayloads = [];
     }
+    this.updateStats();
   }
 
-  setupEventListeners() {
-    // Search
-    const searchInput = document.getElementById('payloadSearch');
-    const clearSearch = document.getElementById('clearSearch');
-
-    if (searchInput) {
-      searchInput.addEventListener('input', (e) => {
-        this.filters.search = e.target.value.trim();
-        this.applyFilters();
-
-        if (clearSearch) {
-          clearSearch.style.display = this.filters.search ? 'block' : 'none';
-        }
-      });
-    }
-
-    if (clearSearch) {
-      clearSearch.addEventListener('click', () => {
-        if (searchInput) searchInput.value = '';
-        this.filters.search = '';
-        clearSearch.style.display = 'none';
-        this.applyFilters();
-      });
-    }
-
-    // Category filters (radio buttons)
-    const categoryInputs = document.querySelectorAll('input[name="category"]');
-    categoryInputs.forEach(input => {
-      input.addEventListener('change', () => {
-        this.filters.category = input.value;
-
-        // Clear other filters when switching to expert to avoid conflicts
-        if (input.value === 'expert') {
-          this.filters.context = [];
-          this.filters.features = [];
-          this.filters.search = '';
-
-          // Clear search input
-          const searchInput = document.getElementById('payloadSearch');
-          if (searchInput) searchInput.value = '';
-
-          // Clear context checkboxes
-          document.querySelectorAll('input[name="context"]:checked').forEach(cb => cb.checked = false);
-
-          // Clear feature checkboxes
-          document.querySelectorAll('input[name="features"]:checked').forEach(cb => cb.checked = false);
-        }
-
-        this.applyFilters();
-      });
+  buildCategoryCounts() {
+    const counts = {};
+    this.allPayloads.forEach(p => {
+      counts[p.category] = (counts[p.category] || 0) + 1;
     });
-
-    // Context filters (checkboxes)
-    const contextInputs = document.querySelectorAll('input[name="context"]');
-    contextInputs.forEach(input => {
-      input.addEventListener('change', () => {
-        this.updateCheckboxFilter('context', input.value, input.checked);
-      });
+    counts['all'] = this.allPayloads.length;
+    document.querySelectorAll('.count[data-cat]').forEach(el => {
+      const cat = el.dataset.cat;
+      el.textContent = counts[cat] ? `(${counts[cat]})` : '';
     });
-
-    // Feature filters (checkboxes)
-    const featureInputs = document.querySelectorAll('input[name="feature"]');
-    featureInputs.forEach(input => {
-      input.addEventListener('change', () => {
-        this.updateCheckboxFilter('features', input.value, input.checked);
-      });
-    });
-
-    // Initialize context filters as all checked
-    contextInputs.forEach(input => {
-      if (input.checked) {
-        this.filters.context.push(input.value);
-      }
-    });
-
-    // View toggles
-    const viewToggles = document.querySelectorAll('.view-toggle');
-    viewToggles.forEach(toggle => {
-      toggle.addEventListener('click', () => {
-        const view = toggle.dataset.view;
-        if (view !== this.currentView) {
-          viewToggles.forEach(t => t.classList.remove('active'));
-          toggle.classList.add('active');
-          this.currentView = view;
-          this.renderPayloads();
-        }
-      });
-    });
-
-    // Reset filters
-    const clearFiltersBtn = document.getElementById('clearFilters');
-    if (clearFiltersBtn) {
-      clearFiltersBtn.addEventListener('click', () => {
-        this.resetFilters();
-      });
-    }
-
-    // Download filtered
-    const downloadBtn = document.getElementById('downloadFiltered');
-    if (downloadBtn) {
-      downloadBtn.addEventListener('click', () => {
-        this.downloadFiltered();
-      });
-    }
   }
 
-  updateCheckboxFilter(filterType, value, checked) {
-    if (checked) {
-      if (!this.filters[filterType].includes(value)) {
-        this.filters[filterType].push(value);
-      }
-    } else {
-      this.filters[filterType] = this.filters[filterType].filter(v => v !== value);
-    }
-    this.applyFilters();
-  }
-
+  /* ──────────────────────────────────────────────────────────────
+     FILTERING
+  ────────────────────────────────────────────────────────────── */
   applyFilters() {
-    this.filteredPayloads = this.payloads.filter(payload => {
-      // Search filter - prioritize payload code matching
-      if (this.filters.search) {
-        const searchTerm = this.filters.search.toLowerCase();
+    const f = this.filters;
 
-        // Check if the search term matches the payload code directly
-        const codeMatch = payload.code.toLowerCase().includes(searchTerm);
-
-        // Check other fields as secondary match
-        const secondaryText = [
-          payload.description || '',
-          payload.category || '',
-          ...(payload.tags || [])
-        ].join(' ').toLowerCase();
-        const secondaryMatch = secondaryText.includes(searchTerm);
-
-        // Return true if either primary (code) or secondary match is found
-        if (!codeMatch && !secondaryMatch) {
-          return false;
-        }
+    this.filtered = this.allPayloads.filter(p => {
+      // Search
+      if (f.search) {
+        const q = f.search.toLowerCase();
+        const haystack = (p.code + ' ' + p.description + ' ' + (p.tags || []).join(' ')).toLowerCase();
+        if (!haystack.includes(q)) return false;
       }
 
-      // Category filter
-      if (this.filters.category !== 'all') {
-        const category = (payload.category || 'basic').toLowerCase();
-        const filterCategory = this.filters.category === 'expert' ? 'research' : this.filters.category;
-        if (category !== filterCategory) {
-          return false;
-        }
-      }
+      // Category
+      if (f.category !== 'all' && p.category !== f.category) return false;
 
-      // Context filter
-      if (this.filters.context.length > 0) {
-        const payloadTags = payload.tags || [];
-        const hasContext = this.filters.context.some(context =>
-          payloadTags.some(tag => tag.toLowerCase().includes(context))
-        );
-        if (!hasContext) {
-          return false;
-        }
-      }
+      // Execution type
+      if (f.exec === 'auto'        && !p.auto_exec) return false;
+      if (f.exec === 'interaction' &&  p.auto_exec) return false;
 
-      // Feature filters
-      if (this.filters.features.length > 0) {
-        for (const feature of this.filters.features) {
-          if (!this.payloadHasFeature(payload, feature)) {
-            return false;
-          }
-        }
-      }
+      // Test status
+      const status = this.testResults[p.id];
+      if (f.status === 'verified' && status !== 'verified') return false;
+      if (f.status === 'failed'   && status !== 'failed')   return false;
+      if (f.status === 'pending'  && status != null)        return false;
+
+      // Feature flags
+      if (f.features.includes('no-parens') && (p.code.includes('(') || p.code.includes(')'))) return false;
+      if (f.features.includes('short')     && p.code.length >= 40) return false;
+      if (f.features.includes('cookie')    && !p.code.toLowerCase().includes('cookie')) return false;
+      if (f.features.includes('exfil')     && !(p.tags || []).includes('exfiltration')) return false;
 
       return true;
     });
 
-    this.renderPayloads();
+    this.render();
     this.updateStats();
   }
 
-  payloadHasFeature(payload, feature) {
-    const code = payload.code;
+  updateStats() {
+    const total    = this.allPayloads.length;
+    const verified = Object.values(this.testResults).filter(v => v === 'verified').length;
+    const showing  = this.filtered.length;
 
-    switch (feature) {
-      case 'no-parentheses':
-        return !code.includes('(') && !code.includes(')');
-      case 'no-quotes':
-        return !code.includes('"') && !code.includes("'");
-      case 'no-brackets':
-        return !code.includes('<') && !code.includes('>');
-      case 'short':
-        return code.length < 50;
-      default:
-        return false;
-    }
+    const el = id => document.getElementById(id);
+    if (el('stat-total'))    el('stat-total').textContent    = total;
+    if (el('stat-showing'))  el('stat-showing').textContent  = showing;
+    if (el('stat-verified')) el('stat-verified').textContent = verified;
+    if (el('count-label'))   el('count-label').textContent   = showing;
   }
 
-  renderPayloads() {
-    const container = document.getElementById('payloadsContainer');
+  /* ──────────────────────────────────────────────────────────────
+     RENDERING
+  ────────────────────────────────────────────────────────────── */
+  render() {
+    const container = document.getElementById('payloads-container');
     if (!container) return;
 
-    if (this.filteredPayloads.length === 0) {
+    if (this.filtered.length === 0) {
       container.innerHTML = `
         <div class="empty-state">
-          <i class="fas fa-search"></i>
-          <h3>No payloads found</h3>
-          <p>Try adjusting your filters or search terms</p>
-        </div>
-      `;
-      this.ensureExportButtonVisible();
+          <div class="empty-state-icon">🔍</div>
+          <h3>No payloads match your filters</h3>
+          <p>Try broadening your search or resetting filters.</p>
+        </div>`;
       return;
     }
 
-    if (this.currentView === 'cards') {
-      this.renderCardsView(container);
+    if (this.view === 'cards') {
+      container.innerHTML = `<div class="payloads-grid">${this.filtered.map((p, i) => this.renderCard(p, i)).join('')}</div>`;
     } else {
-      this.renderListView(container);
+      container.innerHTML = `<div class="payloads-list">${this.filtered.map((p, i) => this.renderRow(p, i)).join('')}</div>`;
     }
 
-    this.setupPayloadEventListeners();
-    this.ensureExportButtonVisible();
+    this.attachCardEvents();
   }
 
-  ensureExportButtonVisible() {
-    // Ensure export button remains visible after view changes
-    const exportBtn = document.getElementById('downloadFiltered');
-    if (exportBtn) {
-      exportBtn.style.display = 'flex';
-      exportBtn.style.visibility = 'visible';
-      exportBtn.style.opacity = '1';
-    }
+  getStatusInfo(id) {
+    const s = this.testResults[id];
+    if (s === 'verified') return { cls: 'verified', badge: '<span class="verified-badge">✅ Verified</span>', cardCls: 'verified' };
+    if (s === 'failed')   return { cls: 'failed',   badge: '<span class="failed-badge">❌ Failed</span>',    cardCls: 'failed' };
+    return { cls: '', badge: '<span class="pending-badge">⬜ Untested</span>', cardCls: '' };
   }
 
-  renderCardsView(container) {
-    const cardsHTML = this.filteredPayloads.map((payload, index) => {
-      const isExpert = payload.category === 'research';
-      const authorInfo = isExpert ? this.renderAuthorInfo(payload) : '';
-
-      return `
-        <div class="payload-card ${isExpert ? 'curated-payload' : ''}">
-          <div class="payload-header">
-            <span class="payload-category">${this.escapeHtml(payload.category || 'XSS')}</span>
-            <div class="payload-actions">
-              <button data-action="copy" data-index="${index}" title="Copy">
-                <i class="fas fa-copy"></i>
-              </button>
-              <button data-action="bookmark" data-index="${index}" title="Bookmark">
-                <i class="fas fa-bookmark"></i>
-              </button>
-            </div>
-          </div>
-          ${authorInfo}
-          <div class="payload-code">
-            <code>${this.escapeHtml(payload.code)}</code>
-          </div>
-          <div class="payload-description">
-            <p>${this.escapeHtml(payload.description || '')}</p>
-          </div>
-          <div class="payload-meta">
-            <span class="payload-context">${this.getContextFromTags(payload.tags)}</span>
-            <span class="payload-length">${payload.code.length} chars</span>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    container.innerHTML = `<div class="payloads-grid">${cardsHTML}</div>`;
-  }
-
-  renderAuthorInfo(payload) {
-    const authorName = this.escapeHtml(payload.contributor || 'Anonymous');
-    const githubUsername = payload.github_username || '';
-    const country = payload.country || 'Unknown';
-    const avatarUrl = githubUsername ? `https://github.com/${githubUsername}.png?size=40` : '';
+  renderCard(p, i) {
+    const { cardCls, badge } = this.getStatusInfo(p.id);
+    const catCls = 'cat-' + p.category.replace(/[^a-z-]/g, '');
+    const execLabel = p.auto_exec ? '⚡ Auto' : '👆 Interaction';
+    const chars  = p.code.length;
+    const codeEsc = this.esc(p.code);
 
     return `
-      <div class="payload-author">
-        <div class="author-avatar">
-          ${avatarUrl ?
-            `<img src="${avatarUrl}" alt="${authorName}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
-             <div class="avatar-fallback" style="display:none">${authorName.charAt(0).toUpperCase()}</div>` :
-            `<div class="avatar-fallback">${authorName.charAt(0).toUpperCase()}</div>`
-          }
-        </div>
-        <div class="author-info">
-          <div class="author-name">
-            ${githubUsername ?
-              `<a href="https://github.com/${githubUsername}" target="_blank" rel="noopener">${authorName}</a>` :
-              authorName
-            }
-            <span class="curated-badge">🔬</span>
-          </div>
-          <div class="author-meta">
-            ${githubUsername ? `@${githubUsername}` : ''} ${country !== 'Unknown' ? `• ${country}` : ''}
-          </div>
+    <div class="payload-card ${cardCls}" data-index="${i}">
+      <div class="payload-card-head">
+        <span class="payload-cat ${catCls}">${this.esc(p.category)}</span>
+        <div class="payload-actions">
+          <button class="action-btn" data-act="test" data-index="${i}" title="Test in Lab">🧪</button>
+          <button class="action-btn" data-act="copy" data-index="${i}" title="Copy">📋</button>
+          <button class="action-btn" data-act="open" data-index="${i}" title="Open in Lab">🔗</button>
         </div>
       </div>
-    `;
-  }
-
-  renderListView(container) {
-    const listHTML = this.filteredPayloads.map((payload, index) => `
-      <div class="payload-list-item">
-        <span class="payload-list-category">${this.escapeHtml(payload.category || 'XSS')}</span>
-        <code class="payload-list-code">${this.escapeHtml(payload.code)}</code>
-        <div class="payload-list-meta">
-          <span>${this.getContextFromTags(payload.tags)}</span>
-          <span>${payload.code.length} chars</span>
-        </div>
-        <div class="payload-list-actions">
-          <button data-action="copy" data-index="${index}" title="Copy">
-            <i class="fas fa-copy"></i>
-          </button>
-          <button data-action="bookmark" data-index="${index}" title="Bookmark">
-            <i class="fas fa-bookmark"></i>
-          </button>
+      <div class="payload-code-wrap"><code>${codeEsc}</code></div>
+      <div class="payload-card-foot">
+        <div class="payload-desc">${this.esc(p.description)}</div>
+        <div class="payload-meta">
+          <span class="meta-pill">${chars}c</span>
+          <span class="meta-pill">${execLabel}</span>
+          ${badge}
         </div>
       </div>
-    `).join('');
-
-    container.innerHTML = `<div class="payloads-list">${listHTML}</div>`;
+    </div>`;
   }
 
-  setupPayloadEventListeners() {
-    const actionButtons = document.querySelectorAll('[data-action]');
-    actionButtons.forEach(button => {
-      button.addEventListener('click', (e) => {
-        const action = e.currentTarget.dataset.action;
-        const index = parseInt(e.currentTarget.dataset.index);
-        const payload = this.filteredPayloads[index];
+  renderRow(p, i) {
+    const { cardCls, badge } = this.getStatusInfo(p.id);
+    const catCls = 'cat-' + p.category.replace(/[^a-z-]/g, '');
+    return `
+    <div class="payload-list-row ${cardCls}" data-index="${i}">
+      <span class="payload-cat ${catCls}" style="font-size:0.68rem;">${this.esc(p.category)}</span>
+      <code>${this.esc(p.code)}</code>
+      <span class="payload-list-chars">${p.code.length}c</span>
+      <div class="payload-actions">
+        <button class="action-btn" data-act="test" data-index="${i}" title="Test">🧪</button>
+        <button class="action-btn" data-act="copy" data-index="${i}" title="Copy">📋</button>
+      </div>
+    </div>`;
+  }
 
-        if (action === 'copy' && payload) {
-          this.copyPayload(payload.code, e.currentTarget);
-        } else if (action === 'bookmark' && payload) {
-          this.bookmarkPayload(payload, e.currentTarget);
-        }
+  attachCardEvents() {
+    document.querySelectorAll('[data-act]').forEach(btn => {
+      btn.addEventListener('click', e => {
+        const act   = btn.dataset.act;
+        const idx   = parseInt(btn.dataset.index);
+        const payload = this.filtered[idx];
+        if (!payload) return;
+
+        if (act === 'copy') this.copyPayload(payload.code, btn);
+        if (act === 'open') window.open(`lab.html?q=${encodeURIComponent(payload.code)}`, '_blank');
+        if (act === 'test') this.testSingle(payload, btn);
       });
     });
   }
 
-  copyPayload(code, button) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code).then(() => {
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.style.color = 'var(--neon-green)';
-
-        setTimeout(() => {
-          button.innerHTML = originalIcon;
-          button.style.color = '';
-        }, 1500);
-      }).catch(err => {
-        console.error('Failed to copy payload:', err);
-        this.fallbackCopyText(code, button);
-      });
-    } else {
-      this.fallbackCopyText(code, button);
-    }
+  copyPayload(code, btn) {
+    navigator.clipboard?.writeText(code).then(() => {
+      const orig = btn.textContent;
+      btn.textContent = '✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1400);
+    }).catch(() => this.fallbackCopy(code));
   }
 
-  fallbackCopyText(text, button) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        const originalIcon = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.style.color = 'var(--neon-green)';
-
-        setTimeout(() => {
-          button.innerHTML = originalIcon;
-          button.style.color = '';
-        }, 1500);
-      }
-    } catch (err) {
-      console.error('Fallback copy failed:', err);
-    } finally {
-      document.body.removeChild(textArea);
-    }
+  fallbackCopy(text) {
+    const ta = Object.assign(document.createElement('textarea'), {
+      value: text, style: 'position:fixed;left:-9999px'
+    });
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
   }
 
-  bookmarkPayload(payload, button) {
-    const bookmarks = JSON.parse(localStorage.getItem('xssnow-bookmarks') || '[]');
-    const isBookmarked = bookmarks.some(b => b.code === payload.code);
-
-    if (isBookmarked) {
-      const filteredBookmarks = bookmarks.filter(b => b.code !== payload.code);
-      localStorage.setItem('xssnow-bookmarks', JSON.stringify(filteredBookmarks));
-      button.innerHTML = '<i class="fas fa-bookmark"></i>';
-      button.style.color = '';
-    } else {
-      bookmarks.push({
-        ...payload,
-        bookmarkedAt: new Date().toISOString()
-      });
-      localStorage.setItem('xssnow-bookmarks', JSON.stringify(bookmarks));
-      button.innerHTML = '<i class="fas fa-bookmark"></i>';
-      button.style.color = 'var(--neon-green)';
-    }
-  }
-
-  resetFilters() {
-    const searchInput = document.getElementById('payloadSearch');
-    const clearSearch = document.getElementById('clearSearch');
-    if (searchInput) searchInput.value = '';
-    if (clearSearch) clearSearch.style.display = 'none';
-
-    const allCategoryRadio = document.querySelector('input[name="category"][value="all"]');
-    if (allCategoryRadio) allCategoryRadio.checked = true;
-
-    const contextInputs = document.querySelectorAll('input[name="context"]');
-    contextInputs.forEach(input => input.checked = true);
-
-    const featureInputs = document.querySelectorAll('input[name="feature"]');
-    featureInputs.forEach(input => input.checked = false);
-
-    this.filters = {
-      search: '',
-      category: 'all',
-      context: ['html', 'javascript', 'css', 'attribute', 'url'],
-      features: []
-    };
-
-    this.applyFilters();
-  }
-
-  downloadFiltered() {
-    if (this.filteredPayloads.length === 0) {
-      alert('No payloads to export. Try adjusting your filters.');
+  /* ──────────────────────────────────────────────────────────────
+     SINGLE PAYLOAD TEST (inline, quick)
+  ────────────────────────────────────────────────────────────── */
+  testSingle(payload, btn) {
+    if (!payload.auto_exec) {
+      window.open(`lab.html?q=${encodeURIComponent(payload.code)}`, '_blank');
       return;
     }
-
-    const payloadLines = this.filteredPayloads
-      .map(payload => payload.code.trim())
-      .filter(code => code.length > 0)
-      .join('\n');
-
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const filename = `xssnow-filtered-payloads-${timestamp}.txt`;
-
-    const blob = new Blob([payloadLines], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-
+    btn.textContent = '⌛';
+    this.runPayloadTest(payload).then(fired => {
+      this.testResults[payload.id] = fired ? 'verified' : 'failed';
+      btn.textContent = fired ? '✅' : '❌';
+      setTimeout(() => {
+        btn.textContent = '🧪';
+        this.applyFilters();
+      }, 1500);
+    });
   }
 
-  updateStats() {
-    const totalCountEl = document.getElementById('totalCount');
-    const downloadCountEl = document.getElementById('downloadCount');
+  /* ──────────────────────────────────────────────────────────────
+     AUTOMATED TEST RUNNER
+  ────────────────────────────────────────────────────────────── */
+  async runAllTests() {
+    const autoPayloads = this.allPayloads.filter(p => p.auto_exec);
+    const total = autoPayloads.length;
+    let passed = 0, failed = 0;
 
-    if (totalCountEl) {
-      totalCountEl.textContent = this.payloads.length;
+    const statusEl   = document.getElementById('tr-status-text');
+    const progressEl = document.getElementById('tr-progress');
+    const resultsEl  = document.getElementById('tr-results');
+    const summaryEl  = document.getElementById('tr-summary');
+    const spinner    = document.getElementById('tr-spinner');
+    const startBtn   = document.getElementById('tr-start-btn');
+
+    spinner.style.display = 'block';
+    startBtn.disabled = true;
+    startBtn.textContent = 'Running...';
+    resultsEl.innerHTML = '';
+
+    for (let i = 0; i < autoPayloads.length; i++) {
+      if (!this.testRunning) break;
+
+      const p = autoPayloads[i];
+      statusEl.textContent = `Testing ${i + 1}/${total}: ${p.code.substring(0, 60)}${p.code.length > 60 ? '…' : ''}`;
+      progressEl.style.width = ((i / total) * 100) + '%';
+
+      const fired = await this.runPayloadTest(p);
+      this.testResults[p.id] = fired ? 'verified' : 'failed';
+
+      if (fired) passed++; else failed++;
+
+      const row = document.createElement('div');
+      row.className = 'tr-result-row';
+      row.innerHTML = `
+        <div class="tr-result-status">${fired ? '✅' : '❌'}</div>
+        <div class="tr-result-code">${this.esc(p.code)}</div>
+        <div class="tr-result-cat">${this.esc(p.category)}</div>`;
+      resultsEl.insertBefore(row, resultsEl.firstChild);
     }
 
-    if (downloadCountEl) {
-      downloadCountEl.textContent = this.filteredPayloads.length;
-    }
+    progressEl.style.width = '100%';
+    spinner.style.display = 'none';
+    startBtn.disabled = false;
+    startBtn.textContent = 'Run Again';
+    this.testRunning = false;
+
+    statusEl.textContent = `Testing complete.`;
+    summaryEl.innerHTML = `<strong>${passed}</strong> verified &nbsp; <strong>${failed}</strong> failed &nbsp; of ${total} auto-exec payloads`;
+    document.getElementById('tr-export-btn').style.display = 'inline-flex';
+
+    this.applyFilters(); // refresh verified badges
   }
 
-  getContextFromTags(tags) {
-    if (!tags || !Array.isArray(tags)) return 'HTML';
+  /* Runs a single payload in the hidden iframe, returns true if XSS fires */
+  runPayloadTest(payload) {
+    return new Promise(resolve => {
+      const iframe = document.getElementById('test-iframe');
+      let resolved = false;
+      const TIMEOUT = 1200;
 
-    const contextTags = ['html', 'javascript', 'css', 'attribute', 'url', 'dom', 'json', 'xml'];
-    const foundContext = tags.find(tag =>
-      contextTags.some(context => tag.toLowerCase().includes(context))
-    );
+      const handler = e => {
+        if (e.data && e.data.type === 'xss_fired' && String(e.data.payloadId) === String(payload.id)) {
+          clearTimeout(timer);
+          window.removeEventListener('message', handler);
+          resolved = true;
+          resolve(true);
+        }
+      };
+      window.addEventListener('message', handler);
 
-    return foundContext ? foundContext.toUpperCase() : 'HTML';
+      const timer = setTimeout(() => {
+        if (!resolved) {
+          window.removeEventListener('message', handler);
+          resolve(false);
+        }
+      }, TIMEOUT);
+
+      // Navigate iframe to lab in test mode
+      iframe.src = `lab.html?testMode=1&payloadId=${payload.id}&q=${encodeURIComponent(payload.code)}&ctx=reflected`;
+    });
   }
 
-  escapeHtml(text) {
-    if (typeof text !== 'string') return '';
-    return text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;')
-      .replace(/\//g, '&#x2F;');
-  }
+  /* ──────────────────────────────────────────────────────────────
+     EVENT SETUP
+  ────────────────────────────────────────────────────────────── */
+  setupEvents() {
+    // Search
+    const searchInput = document.getElementById('search-input');
+    const searchClear = document.getElementById('search-clear');
+    searchInput?.addEventListener('input', e => {
+      this.filters.search = e.target.value.trim();
+      searchClear.style.display = this.filters.search ? 'block' : 'none';
+      this.applyFilters();
+    });
+    searchClear?.addEventListener('click', () => {
+      searchInput.value = '';
+      this.filters.search = '';
+      searchClear.style.display = 'none';
+      this.applyFilters();
+    });
 
-  getFallbackPayloads() {
-    return [
-      {
-        code: '<script>alert("XSS")</script>',
-        category: 'basic',
-        tags: ['basic', 'script', 'alert'],
-        description: 'Basic script tag XSS payload',
-        contributor: 'XSSNow',
-        date_added: '2024-12-31'
-      },
-      {
-        code: '<img src=x onerror=alert("XSS")>',
-        category: 'basic',
-        tags: ['basic', 'img', 'onerror'],
-        description: 'Image tag with onerror event',
-        contributor: 'XSSNow',
-        date_added: '2024-12-31'
-      },
-      {
-        code: '<svg onload=alert("XSS")>',
-        category: 'bypass',
-        tags: ['svg', 'onload', 'bypass'],
-        description: 'SVG tag with onload event',
-        contributor: 'XSSNow',
-        date_added: '2024-12-31'
-      },
-      {
-        code: 'javascript:alert("XSS")',
-        category: 'basic',
-        tags: ['javascript', 'url'],
-        description: 'JavaScript URL scheme',
-        contributor: 'XSSNow',
-        date_added: '2024-12-31'
-      },
-      {
-        code: '<iframe src=javascript:alert("XSS")>',
-        category: 'basic',
-        tags: ['iframe', 'javascript'],
-        description: 'Iframe with JavaScript URL',
-        contributor: 'XSSNow',
-        date_added: '2024-12-31'
+    // Category radios
+    document.querySelectorAll('input[name="cat"]').forEach(r => {
+      r.addEventListener('change', () => { this.filters.category = r.value; this.applyFilters(); });
+    });
+
+    // Exec radios
+    document.querySelectorAll('input[name="exec"]').forEach(r => {
+      r.addEventListener('change', () => { this.filters.exec = r.value; this.applyFilters(); });
+    });
+
+    // Status radios
+    document.querySelectorAll('input[name="status"]').forEach(r => {
+      r.addEventListener('change', () => { this.filters.status = r.value; this.applyFilters(); });
+    });
+
+    // Feature checkboxes
+    document.querySelectorAll('input[name="feat"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        this.filters.features = Array.from(document.querySelectorAll('input[name="feat"]:checked')).map(c => c.value);
+        this.applyFilters();
+      });
+    });
+
+    // View toggle
+    document.getElementById('view-cards')?.addEventListener('click', () => {
+      this.view = 'cards';
+      document.getElementById('view-cards').classList.add('active');
+      document.getElementById('view-list').classList.remove('active');
+      this.render();
+    });
+    document.getElementById('view-list')?.addEventListener('click', () => {
+      this.view = 'list';
+      document.getElementById('view-list').classList.add('active');
+      document.getElementById('view-cards').classList.remove('active');
+      this.render();
+    });
+
+    // Reset filters
+    document.getElementById('reset-filters')?.addEventListener('click', () => {
+      this.filters = { search: '', category: 'all', exec: 'all', status: 'all', features: [] };
+      document.querySelectorAll('input[name="cat"]')[0].checked = true;
+      document.querySelectorAll('input[name="exec"]')[0].checked = true;
+      document.querySelectorAll('input[name="status"]')[0].checked = true;
+      document.querySelectorAll('input[name="feat"]').forEach(cb => cb.checked = false);
+      document.getElementById('search-input').value = '';
+      document.getElementById('search-clear').style.display = 'none';
+      this.applyFilters();
+    });
+
+    // Export .txt
+    document.getElementById('export-txt')?.addEventListener('click', () => {
+      const lines = this.filtered.map(p => p.code).join('\n');
+      const blob  = new Blob([lines], { type: 'text/plain' });
+      const url   = URL.createObjectURL(blob);
+      const a     = Object.assign(document.createElement('a'), {
+        href: url, download: `xssvault-payloads-${Date.now()}.txt`, style: 'display:none'
+      });
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(url); document.body.removeChild(a);
+    });
+
+    // Test runner
+    document.getElementById('runTestsBtn')?.addEventListener('click', () => {
+      document.getElementById('test-overlay').classList.add('active');
+    });
+    document.getElementById('tr-close-btn')?.addEventListener('click', () => {
+      this.testRunning = false;
+      document.getElementById('test-overlay').classList.remove('active');
+    });
+    document.getElementById('tr-start-btn')?.addEventListener('click', () => {
+      if (this.testRunning) return;
+      this.testRunning = true;
+      document.getElementById('tr-results').innerHTML = '';
+      document.getElementById('tr-summary').textContent = '';
+      document.getElementById('tr-export-btn').style.display = 'none';
+      this.runAllTests();
+    });
+    document.getElementById('tr-export-btn')?.addEventListener('click', () => {
+      const lines = this.allPayloads
+        .filter(p => this.testResults[p.id] === 'verified')
+        .map(p => p.code).join('\n');
+      const blob = new Blob([lines], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = Object.assign(document.createElement('a'), {
+        href: url, download: `xssvault-verified-${Date.now()}.txt`, style: 'display:none'
+      });
+      document.body.appendChild(a); a.click();
+      URL.revokeObjectURL(url); document.body.removeChild(a);
+    });
+
+    // Close overlay on outside click
+    document.getElementById('test-overlay')?.addEventListener('click', e => {
+      if (e.target === document.getElementById('test-overlay')) {
+        this.testRunning = false;
+        document.getElementById('test-overlay').classList.remove('active');
       }
-    ];
+    });
+  }
+
+  esc(str) {
+    return String(str)
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
   }
 }
 
-// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
-  window.payloadsManager = new PayloadsManager();
+  window.vault = new XSSVault();
+
+  // Pre-select category from URL ?cat= param
+  const urlCat = new URLSearchParams(location.search).get('cat');
+  if (urlCat) {
+    const radio = document.querySelector(`input[name="cat"][value="${urlCat}"]`);
+    if (radio) { radio.checked = true; }
+  }
 });

