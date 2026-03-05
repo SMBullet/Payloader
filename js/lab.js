@@ -107,6 +107,20 @@ document.addEventListener('DOMContentLoaded', function() {
   var params = new URLSearchParams(location.search);
   var testMode = params.get('testMode');
 
+  // Pre-fill from localStorage handoff (no payload in URL)
+  var pk = params.get('pk');
+  if (pk && !testMode) {
+    try {
+      var prefill = localStorage.getItem(pk);
+      if (prefill) {
+        localStorage.removeItem(pk);
+        history.replaceState(null, '', 'lab.html');
+        var reflectedInput = document.getElementById('reflected-input');
+        if (reflectedInput) reflectedInput.value = prefill;
+      }
+    } catch(e) {}
+  }
+
   // Defense mode toggle (disabled during automated test mode)
   var defenseToggle = document.getElementById('defense-toggle');
   if (defenseToggle) {

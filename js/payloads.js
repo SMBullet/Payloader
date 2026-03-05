@@ -25,10 +25,11 @@ class XSSVault {
     this.setupEvents();
 
     // Pre-select category from ?cat= URL param (from home page links)
-    const urlCat = new URLSearchParams(location.search).get('cat');
+    const rawCat = new URLSearchParams(location.search).get('cat') || '';
+    const urlCat = rawCat.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 60);
     if (urlCat) {
-      const radio = document.querySelector(`input[name="cat"][value="${urlCat}"]`);
-      if (radio) { radio.checked = true; this.filters.category = urlCat; }
+      const radios = document.querySelectorAll('input[name="cat"]');
+      radios.forEach(r => { if (r.value === urlCat) { r.checked = true; this.filters.category = urlCat; } });
     }
 
     this.applyFilters();
@@ -196,7 +197,7 @@ class XSSVault {
         if (!payload) return;
 
         if (act === 'copy') this.copyPayload(payload.code, btn);
-        if (act === 'open') window.open(`lab.html?q=${encodeURIComponent(payload.code)}`, '_blank');
+        if (act === 'open') this.openInLab(payload.code);
         if (act === 'test') this.testSingle(payload, btn);
       });
     });
@@ -224,9 +225,21 @@ class XSSVault {
   /* ──────────────────────────────────────────────────────────────
      SINGLE PAYLOAD TEST (inline, quick)
   ────────────────────────────────────────────────────────────── */
+  /* Pass payload to lab without putting it in the visible URL */
+  openInLab(code) {
+    try {
+      const key = '_lab_' + Date.now();
+      localStorage.setItem(key, code);
+      window.open(`lab.html?pk=${key}`, '_blank', 'noopener,noreferrer');
+    } catch(e) {
+      // Fallback if localStorage unavailable
+      window.open('lab.html', '_blank', 'noopener,noreferrer');
+    }
+  }
+
   testSingle(payload, btn) {
     if (!payload.auto_exec) {
-      window.open(`lab.html?q=${encodeURIComponent(payload.code)}`, '_blank');
+      this.openInLab(payload.code);
       return;
     }
     btn.textContent = '⌛';
@@ -452,9 +465,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.vault = new XSSVault();
 
   // Pre-select category from URL ?cat= param
-  const urlCat = new URLSearchParams(location.search).get('cat');
-  if (urlCat) {
-    const radio = document.querySelector(`input[name="cat"][value="${urlCat}"]`);
-    if (radio) { radio.checked = true; }
+  const rawCat2 = new URLSearchParams(location.search).get('cat') || '';
+  const urlCat2 = rawCat2.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 60);
+  if (urlCat2) {
+    document.querySelectorAll('input[name="cat"]').forEach(r => { if (r.value === urlCat2) r.checked = true; });
   }
 });

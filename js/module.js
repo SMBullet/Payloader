@@ -1,5 +1,15 @@
 /* Payloader — Generic Module Browser */
 
+// Allowlist: only these data sources may be loaded via ?src=
+const ALLOWED_SRCS = new Set([
+  'data/sqli.json','data/cmdi.json','data/ssti.json','data/traversal.json',
+  'data/xxe.json','data/ssrf.json','data/redirect.json','data/revshells.json',
+  'data/php.json','data/jwt.json','data/csrf.json','data/proto.json',
+  'data/deserial.json','data/smuggling.json','data/crlf.json','data/idor.json',
+  'data/nosql.json','data/graphql.json','data/oauth.json','data/racecond.json',
+  'data/websocket.json',
+]);
+
 class ModuleBrowser {
   constructor() {
     this.allPayloads = [];
@@ -15,8 +25,14 @@ class ModuleBrowser {
 
   async init() {
     const params = new URLSearchParams(location.search);
-    this.src  = params.get('src')  || '';
-    this.name = params.get('name') || 'Module';
+    const rawSrc  = params.get('src')  || '';
+    const rawName = params.get('name') || 'Module';
+
+    // Only allow known data sources — reject anything not on the allowlist
+    this.src  = ALLOWED_SRCS.has(rawSrc) ? rawSrc : '';
+    // Sanitize name: strip to plain text, cap length
+    this.name = rawName.replace(/[<>"'&]/g, '').slice(0, 80) || 'Module';
+
     // Derive module key from src path (e.g. data/sqli.json → sqli)
     this.moduleKey  = (this.src.split('/').pop() || '').replace('.json','');
     this.moduleName = this.name;
@@ -29,11 +45,14 @@ class ModuleBrowser {
     this.buildSidebar();
     this.setupEvents();
 
-    const urlCat = params.get('cat');
+    const rawCat = params.get('cat') || '';
+    // Sanitize: only allow alphanumeric, hyphens, spaces
+    const urlCat = rawCat.replace(/[^a-zA-Z0-9 _-]/g, '').slice(0, 60);
     if (urlCat) {
       this.filters.category = urlCat;
-      const radio = document.querySelector(`input[name="mod-cat"][value="${urlCat}"]`);
-      if (radio) radio.checked = true;
+      // Safe selector: use getAttribute-based search instead of dynamic selector
+      const radios = document.querySelectorAll('input[name="mod-cat"]');
+      radios.forEach(r => { if (r.value === urlCat) r.checked = true; });
     }
 
     this.applyFilters();
